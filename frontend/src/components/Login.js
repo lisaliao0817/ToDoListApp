@@ -1,41 +1,31 @@
-import React, { useState } from "react";
-import axios from 'axios';  // Import axios
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-const LoginSignup = () => {
-    const [isLogin, setIsLogin] = useState(true);
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+const Login = () => {
+    const navigate = useNavigate();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
 
-    const handleSubmit = async (event) => {
+    const handleSubmit = (event) => {
         event.preventDefault();
-        
-        const url = isLogin ? 'http://your-backend-url/login' : 'http://your-backend-url/signup';
-        
-        try {
-            const response = await axios.post(url, { email, password });
-            
-            if (response.status === 200) {
-                console.log(response.data);  // Handle successful response. E.g., set user token, redirect, etc.
-            } else {
-                console.log("Error:", response.data.message);
-            }
-        } catch (error) {
-            console.error("There was an error:", error.response.data.message); // Handle error. E.g., show error message to user.
-        }
+        console.log('Attempting to log in with email:', email, 'and password:', password);
+    };
+
+    const handleSignupClick = () => {
+        navigate('/signup'); // This will navigate the user to the Sign Up page
     };
 
     return (
         <div>
             <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
-            Sign in to your account
-            {isLogin ? "Sign in to your account" : "Sign Up"}
+             Sign In
             </h2>
 
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
           <form className="space-y-6" action="#" method="POST" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
-                Email address
+                Email
               </label>
               <div className="mt-2">
                 <input
@@ -76,17 +66,14 @@ const LoginSignup = () => {
                 type="submit"
                 className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               >
-                {isLogin ? "Sign in" : "Sign Up"}
+                Sign In
               </button>
             </div>
           </form>
 
             <div className="mt-6">
             <p>
-                {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-                <button onClick={() => setIsLogin(!isLogin)}>
-                    {isLogin ? "Sign up" : "Sign in"}
-                </button>
+            Don't have an account? <button onClick={handleSignupClick}>Sign Up</button>
             </p>
             </div>
         </div>
@@ -94,4 +81,4 @@ const LoginSignup = () => {
     );
 };
 
-export default LoginSignup;
+export default Login;

@@ -1,48 +1,84 @@
-import React, { useState, useEffect } from 'react';
-import TodoItem from './ToDoItem';
+import React, { useState } from 'react';
+import ToDoItem from './ToDoItem';
 
-function TodoList() {
-  const [todos, setTodos] = useState([]);
+const ToDoList = () => {
+    const [tasks, setTasks] = useState([]);
 
-  useEffect(() => {
-    fetch('http://localhost:5000/tasks')
-    .then(response => response.json())
-    .then(data => {
-      setTodos(data);
-    })
-    .catch(error => console.error('Error:', error));
-  }, []);  // The empty dependency array ensures this effect runs only once, similar to componentDidMount
+    const addTask = (title) => {
+        const newTask = {
+            id: Date.now(),
+            title: title,
+            subtasks: [],
+        };
+        setTasks([...tasks, newTask]);
+    };
 
-  const addTodo = () => {
-    const title = prompt("What's the task title?");
-    if (title) {
-      // Send the task data to the server
-      fetch('http://localhost:5000/tasks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ title, status: 'Pending' }),
-      })
-      .then(response => response.json())
-      .then(data => {
-        // On successful response, update the state with the returned task
-        setTodos([...todos, data]);
-      })
-      .catch(error => console.error('Error:', error));
-    }
+    const removeTask = (id) => {
+        setTasks(tasks.filter(task => task.id !== id));
+    };
+
+    const addSubTaskToTask = (parentId, title) => {
+      const newTask = {
+          id: Date.now(),
+          title: title,
+          subtasks: [],
+      };
+      
+      const addSubTaskRecursive = (tasks) => {
+          return tasks.map(task => {
+              if (task.id === parentId) {
+                  return {
+                      ...task,
+                      subtasks: [...task.subtasks, newTask]
+                  };
+              } else {
+                  return {
+                      ...task,
+                      subtasks: addSubTaskRecursive(task.subtasks)
+                  };
+              }
+          });
+      }
+
+      setTasks(addSubTaskRecursive(tasks));
   };
 
-  return (
-    <div>
-      <button onClick={addTodo}>Add Todo</button>
-      <div className="space-y-4">
-        {todos.map((todo, index) => (
-          <TodoItem key={index} item={todo} />
-        ))}
-      </div>
-    </div>
-  );
-}
+  const removeSubTaskFromTask = (taskId) => {
+      const removeSubTaskRecursive = (tasks) => {
+          return tasks.filter(task => task.id !== taskId).map(task => ({
+              ...task,
+              subtasks: removeSubTaskRecursive(task.subtasks)
+          }));
+      };
 
-export default TodoList;
+      setTasks(removeSubTaskRecursive(tasks));
+  };
+
+    return (
+        <div className="bg-white shadow-md rounded-lg p-6 mt-10 w-full">
+            <h2 className="text-xl font-semibold mb-4">ToDo List</h2>
+            <div className="space-y-2">
+                {tasks.map(task => (
+                    <ToDoItem 
+                        key={task.id} 
+                        item={task} 
+                        removeTask={removeTask} 
+                        level={1}
+                        onAddSubTask={addSubTaskToTask}
+                        onRemoveSubTask={removeSubTaskFromTask}
+                    />
+                ))}
+            </div>
+            <div className="mt-4">
+                <button 
+                    onClick={() => addTask(prompt('Enter task title'))}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+                >
+                    Add Task
+                </button>
+            </div>
+        </div>
+    );
+};
+
+export default ToDoList;

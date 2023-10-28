@@ -1,37 +1,28 @@
-import React from 'react';
-import TodoList from './components/ToDoList';
-import Header from './components/Header';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
+import UserPage from './pages/UserPage';
+import { UserProvider } from './UserContext';
 
 function App() {
-    return (
+  const [user, setUser] = useState(null); // null means no user is logged in
+  
+  return (
+    <UserProvider value={{ user, setUser }}>
       <Router>
         <div className="App">
           <Routes>
             {/* ... other routes ... */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={<UserPage />} />
+            <Route path="/signup" element={<SignupPage />} />
             {/* ... other routes ... */}
           </Routes>
         </div>
       </Router>
-    );
-}
-
-export default App;
-
-
-
-/*
-function App() {
-  return (
-    <div className="App">
-      <Header />
-      <h1>Todo List App</h1>
-      <TodoList />
-    </div>
+    </UserProvider>
   );
 }
 
 export default App;
-*/
