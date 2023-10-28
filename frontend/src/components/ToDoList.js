@@ -1,80 +1,42 @@
-import React, { useState } from 'react';
+
+
+import React from 'react';
 import ToDoItem from './ToDoItem';
+import { Draggable } from 'react-beautiful-dnd';
+import { PlusCircleIcon } from '@heroicons/react/24/outline';
 
-const ToDoList = () => {
-    const [tasks, setTasks] = useState([]);
-
-    const addTask = (title) => {
-        const newTask = {
-            id: Date.now(),
-            title: title,
-            subtasks: [],
-        };
-        setTasks([...tasks, newTask]);
-    };
-
-    const removeTask = (id) => {
-        setTasks(tasks.filter(task => task.id !== id));
-    };
-
-    const addSubTaskToTask = (parentId, title) => {
-      const newTask = {
-          id: Date.now(),
-          title: title,
-          subtasks: [],
-      };
-      
-      const addSubTaskRecursive = (tasks) => {
-          return tasks.map(task => {
-              if (task.id === parentId) {
-                  return {
-                      ...task,
-                      subtasks: [...task.subtasks, newTask]
-                  };
-              } else {
-                  return {
-                      ...task,
-                      subtasks: addSubTaskRecursive(task.subtasks)
-                  };
-              }
-          });
-      }
-
-      setTasks(addSubTaskRecursive(tasks));
-  };
-
-  const removeSubTaskFromTask = (taskId) => {
-      const removeSubTaskRecursive = (tasks) => {
-          return tasks.filter(task => task.id !== taskId).map(task => ({
-              ...task,
-              subtasks: removeSubTaskRecursive(task.subtasks)
-          }));
-      };
-
-      setTasks(removeSubTaskRecursive(tasks));
-  };
+const ToDoList = ({ listId, tasks, addTask, removeTask, addSubTaskToTask, removeSubTaskFromTask }) => {
 
     return (
-        <div className="bg-white shadow-md rounded-lg p-6 mt-10 w-full">
+        <div className="bg-white shadow-md rounded-lg p-6 mt-10 min-w-full">
             <h2 className="text-xl font-semibold mb-4">ToDo List</h2>
             <div className="space-y-2">
-                {tasks.map(task => (
+            {tasks.map((task, index) => (
+              <Draggable key={task.id} draggableId={String(task.id)} index={index}>
+                {(provided) => (
+                  <div
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                    ref={provided.innerRef}
+                  >
                     <ToDoItem 
-                        key={task.id} 
-                        item={task} 
-                        removeTask={removeTask} 
-                        level={1}
-                        onAddSubTask={addSubTaskToTask}
-                        onRemoveSubTask={removeSubTaskFromTask}
+                      key={task.id} 
+                      item={task} 
+                      level={1}
+                      listId={listId} // Pass the listId
+                      onAddSubTask={(parentId, title) => addSubTaskToTask(listId, parentId, title)}
+                      onRemoveSubTask={(taskId) => removeSubTaskFromTask(listId, taskId)}
+                      removeTask={() => removeTask(listId, task.id)} 
                     />
-                ))}
+                  </div>
+                )}
+              </Draggable>
+            ))}
             </div>
             <div className="mt-4">
-                <button 
-                    onClick={() => addTask(prompt('Enter task title'))}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
-                >
-                    Add Task
+            <button 
+              onClick={() => addTask(listId, prompt('Enter task title'))}>
+                    <PlusCircleIcon className="h-5 w-5 hover:text-gray-500" />
                 </button>
             </div>
         </div>
