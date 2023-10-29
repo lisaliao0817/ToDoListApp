@@ -3,13 +3,13 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import UserPage from './pages/UserPage';
-import { UserProvider } from './UserContext';
+import UserContext from './UserContext';
 
 function App() {
   const [user, setUser] = useState(null); // null means no user is logged in
   
   return (
-    <UserProvider value={{ user, setUser }}>
+    <UserContext.Provider value={{ user, setUser }}>
       <Router>
         <div className="App">
           <Routes>
@@ -21,7 +21,7 @@ function App() {
           </Routes>
         </div>
       </Router>
-    </UserProvider>
+      </UserContext.Provider>
   );
 }
 

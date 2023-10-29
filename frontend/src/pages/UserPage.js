@@ -1,19 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import ToDoList from '../components/ToDoList';
 import Header from '../components/Header';
 // add a feature that will allow users to drag a top-level task to another list. Its sublists should be moved as well
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
+import axios from 'axios';
+import UserContext from '../UserContext';
+
 
 const UserPage = () => {
     const [lists, setLists] = useState([]);
+    const { user, setUser } = useContext(UserContext);
 
-    const addNewList = () => {
+    const addNewList = async () => {
         const title = window.prompt("Enter the title for the new list:");
     
         if (title) {
-            setLists([...lists, { id: Date.now(), title: title, tasks: [] }]);
+            try {
+                // Make a POST request to create a new list
+                const response = await axios.post('http://127.0.0.1:5000/api/list', { name: title }, { withCredentials: true });
+    
+                if (response.data && response.data.id) {
+                    setLists([...lists, { id: response.data.id, title: title, tasks: [] }]);
+                } else {
+                    window.alert("Error creating the list.");
+                }
+            } catch (error) {
+                console.error("Error creating list:", error);
+                window.alert("There was an issue creating the list. Please try again.");
+            }
         }
     };
+    
     
     
     const removeList = (listId) => {
@@ -21,18 +38,40 @@ const UserPage = () => {
         setLists(newList);
     };
     
-    const handleOnDragEnd = (result) => {
+
+    const handleOnDragEnd = async (result) => {
         const { source, destination } = result;
         
         if (!destination) return;
     
-        const newLists = [...lists];  // Create a shallow copy of lists
+        const newLists = [...lists];
     
-        if (source.droppableId === destination.droppableId) {
-            // If within the same list, reorder tasks
+        if (source.droppableId !== destination.droppableId) {
+            // If in different lists, move the task
             const sourceList = newLists.find(list => list.id === parseInt(source.droppableId));
-            const [removed] = sourceList.tasks.splice(source.index, 1);
-            sourceList.tasks.splice(destination.index, 0, removed);
+            const destList = newLists.find(list => list.id === parseInt(destination.droppableId));
+            const [taskToMove] = sourceList.tasks.splice(source.index, 1);
+            destList.tasks.splice(destination.index, 0, taskToMove);
+    
+            // Make the API call to update the task's list_id in the backend
+            try {
+                const response = await fetch(`/api/task/${taskToMove.id}/move/${destList.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Add authentication headers if necessary
+                    },
+                });
+    
+                const data = await response.json();
+                if (response.status !== 200) {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error("Failed to move the task:", error);
+                // You might want to handle this more gracefully in production,
+                // such as showing a notification to the user, or reverting the drag-and-drop.
+            }
         } else {
             // If in different lists, move the task
             const sourceList = newLists.find(list => list.id === parseInt(source.droppableId));
@@ -43,6 +82,8 @@ const UserPage = () => {
     
         setLists(newLists);
     };
+
+
 
     const addTaskToList = (listId, title) => {
         if (!title || title.trim() === "") {
@@ -158,7 +199,10 @@ const UserPage = () => {
     
             {/* Use a container with some horizontal padding and center everything */}
             <div className="container mx-auto px-4 py-8">
-    
+
+
+            {user ? (
+                    <>
                 {/* This will define a grid. Each list will try to fit in a 1/4 column, but will not shrink below its natural width */}
                 <DragDropContext onDragEnd={handleOnDragEnd}>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 justify-items-start">
@@ -187,17 +231,21 @@ const UserPage = () => {
                     </div>
                     </DragDropContext>
     
-                <div className="mt-8">
-                    {/* Button to add a new ToDoList */}
-                    <button onClick={addNewList}
-                        className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                        Add a new list
-                    </button>
-                </div>
+                    <div className="mt-8">
+                            <button onClick={addNewList}
+                                className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                                Add a new list
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <div className="flex justify-center items-center mt-20">
+                        <p className="text-lg text-gray-700">Log in to start creating your todo lists</p>
+                    </div>
+                )}
             </div>
         </div>
     );
-    
 };
 
 export default UserPage;

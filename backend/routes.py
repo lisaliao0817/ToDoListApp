@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from database import db
 from models import List, Task, SubTask
 
-api = Blueprint('api', __name__)
+api = Blueprint('api', __name__, url_prefix='/api/')
 
 # Create a new list
 @api.route('/list', methods=['POST'])
@@ -136,5 +136,30 @@ def move_task(task_id, new_list_id):
         task.list_id = new_list_id
         db.session.commit()
         return jsonify({"message": f"Task moved to list {new_list.name}"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/list/<int:list_id>', methods=['PUT'])
+@login_required
+def update_list_title(list_id):
+    try:
+        # Retrieve the list that matches the list_id and current user's id
+        list_to_update = List.query.filter_by(id=list_id, user_id=current_user.id).first()
+
+        # If the list is not found, return an error
+        if not list_to_update:
+            return jsonify({"error": "List not found"}), 404
+
+        # Get the updated title from the request data
+        data = request.json
+        list_to_update.name = data.get('name', list_to_update.name)
+
+        # Commit the changes to the database
+        db.session.commit()
+        
+        # Return a success response
+        return jsonify({"message": "List title updated successfully"}), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500

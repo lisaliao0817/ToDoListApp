@@ -1,15 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import UserContext from '../UserContext';
 
 const Login = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const { setUser } = useContext(UserContext);
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        console.log('Attempting to log in with email:', email, 'and password:', password);
-    };
+    
+const handleSubmit = async (event) => {
+  event.preventDefault();
+  
+  try {
+    const response = await axios.post('http://127.0.0.1:5000/api/v1/login', { 
+        email: email, 
+        password: password 
+    });
+      
+    setUser({ email: email });  // set the user after successful login
+    console.log('Logged in successfully:', response.data.message);
+
+    // Navigate to a dashboard or other page after successful login
+    navigate('/');
+
+  } catch (error) {
+      console.error('Login error:', error.response.data.message);
+      // Handle login errors like showing a notification or updating some state
+      if (error.response.data.message.includes("Please check your login details and try again.")) { // Modify this condition based on your backend's error message
+        window.alert("Please check your login details and try again."); // Display alert to the user
+    } else {
+        // Handle other signup errors, e.g., showing a notification to the user
+        // ... your other error handling logic here ...
+    }
+  }
+};
 
     const handleSignupClick = () => {
         navigate('/signup'); // This will navigate the user to the Sign Up page

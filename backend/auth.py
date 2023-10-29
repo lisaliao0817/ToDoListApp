@@ -3,8 +3,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required
 from database import db
 from models import User
-import jwt
-import datetime
 
 auth = Blueprint('auth', __name__, url_prefix='/api/v1')
 
@@ -39,16 +37,14 @@ def login():
     if not user or not user.check_password(password):
         return jsonify({'message': 'Please check your login details and try again.'}), 401
 
-    token = jwt.encode({
-        'user_id': user.id, 
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-    }, 'YOUR_SECRET_KEY', algorithm="HS256")
+    login_user(user)  # Log the user in using Flask-Login
+    return jsonify({'message': 'Logged in successfully!'}), 200
 
-    return jsonify({'token': token}), 200
-
-@auth.route('/logout')
+@auth.route('/logout', methods=['POST'])
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('auth.login'))
+    return jsonify({'message': 'Logged out successfully!'}), 200
+
+
 

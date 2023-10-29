@@ -1,10 +1,26 @@
-import { Link } from 'react-router-dom';
-import React, { useState, useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import React, { useContext } from 'react';
 import UserContext from '../UserContext';
-
+import axios from 'axios';
 
 export default function Header() {
-  const { user } = useContext(UserContext);
+  const { user, setUser } = useContext(UserContext);
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      // Send a request to the backend logout endpoint
+      await axios.post('http://127.0.0.1:5000/api/v1/logout');
+
+      // Clear user from React context
+      setUser(null);
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error.response?.data?.message || error.message);
+      // Handle other logout errors, e.g., showing a notification to the user
+      // ... your other error handling logic here ...
+    }
+  };
 
   return (
     <header className="bg-white">
@@ -18,9 +34,17 @@ export default function Header() {
         
         <div className="flex flex-1 items-center justify-end gap-x-6">
           {user ? (
-            <span className="text-gray-700">{user.email}</span>
+            <>
+              <span className="text-gray-700">{user.email}</span>
+              <button 
+                onClick={handleLogout}
+                className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+              >
+                Logout
+              </button>
+            </>
           ) : (
-            <Link to="/loginsignup"
+            <Link to="/login"
                 className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               >
                 Log in
@@ -32,4 +56,4 @@ export default function Header() {
       </nav>
     </header>
   )
-}
+};
