@@ -1,15 +1,29 @@
-
-
 import React from 'react';
 import ToDoItem from './ToDoItem';
 import { Draggable } from 'react-beautiful-dnd';
-import { PlusCircleIcon } from '@heroicons/react/24/outline';
+import { PlusCircleIcon, TrashIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
-const ToDoList = ({ listId, tasks, addTask, removeTask, addSubTaskToTask, removeSubTaskFromTask }) => {
+const ToDoList = ({ listId, tasks, addTask, removeTask, addSubTaskToTask, removeSubTaskFromTask, removeList, listName, openListModal, openTaskModal }) => {
+
+
+  const editListTitle = () => {
+    openListModal(listId);
+}
+
 
     return (
-        <div className="bg-white shadow-md rounded-lg p-6 mt-10 min-w-full">
-            <h2 className="text-xl font-semibold mb-4">ToDo List</h2>
+        <div className="bg-white shadow-md rounded-lg p-6 mt-10 min-w-full group/list">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold mb-4">{listName}</h2>
+            <div className='group-hover/list:opacity-100 group-hover/list:visible opacity-0 invisible'>
+            <button onClick={editListTitle} className="focus:outline-none">
+                    <PencilSquareIcon className="h-5 w-5 mb-3 cursor-pointer hover:text-gray-500 " />
+                </button>
+            <button onClick={removeList} title="Delete List">
+                    <TrashIcon className="h-5 w-5 mb-3 cursor-pointer hover:text-gray-500  ml-1" />
+                </button>
+                </div>
+                </div>
             <div className="space-y-2">
             {tasks.map((task, index) => (
               <Draggable key={task.id} draggableId={String(task.id)} index={index}>
@@ -24,6 +38,7 @@ const ToDoList = ({ listId, tasks, addTask, removeTask, addSubTaskToTask, remove
                       item={task} 
                       level={1}
                       listId={listId} // Pass the listId
+                      openTaskModal={() => openTaskModal(listId, task.id)}
                       onAddSubTask={(parentId, title) => addSubTaskToTask(listId, parentId, title)}
                       onRemoveSubTask={(taskId) => removeSubTaskFromTask(listId, taskId)}
                       removeTask={() => removeTask(listId, task.id)} 
