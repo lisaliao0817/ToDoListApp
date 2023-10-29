@@ -8,10 +8,18 @@ const UserPage = () => {
     const [lists, setLists] = useState([]);
 
     const addNewList = () => {
-        setLists([...lists, { id: Date.now(), tasks: [] }]);
+        const title = window.prompt("Enter the title for the new list:");
+    
+        if (title) {
+            setLists([...lists, { id: Date.now(), title: title, tasks: [] }]);
+        }
     };
     
-
+    
+    const removeList = (listId) => {
+        const newList = lists.filter(list => list.id !== listId);
+        setLists(newList);
+    };
     
     const handleOnDragEnd = (result) => {
         const { source, destination } = result;
@@ -37,11 +45,16 @@ const UserPage = () => {
     };
 
     const addTaskToList = (listId, title) => {
+        if (!title || title.trim() === "") {
+            window.alert("Task title cannot be empty!");
+            return;
+        }
+    
         const newList = lists.map(list => {
             if (list.id === listId) {
                 return {
                     ...list,
-                    tasks: [...list.tasks, { id: Date.now(), title: title, subtasks: [] }]
+                    tasks: [...list.tasks, { id: Date.now(), title: title.trim(), subtasks: [] }]
                 };
             }
             return list;
@@ -62,12 +75,18 @@ const UserPage = () => {
         });
         setLists(newList);
     };
-    
+
+
 
     const addSubTaskToTask = (listId, parentId, title) => {
+        if (!title || title.trim() === "") {
+            window.alert("Subtask title cannot be empty!");
+            return;
+        }
+    
         const newTask = {
             id: Date.now(),
-            title: title,
+            title: title.trim(),
             subtasks: [],
         };
         
@@ -86,7 +105,7 @@ const UserPage = () => {
                 }
             });
         }
-
+    
         const newList = lists.map(list => {
             if (list.id === listId) {
                 return {
@@ -98,6 +117,7 @@ const UserPage = () => {
         });
         setLists(newList);
     };
+    
   
     const removeSubTaskFromTask = (listId, taskId) => {
         const removeSubTaskRecursive = (tasks) => {
@@ -119,7 +139,18 @@ const UserPage = () => {
         setLists(newList);
     };
     
-    
+    const updateListTitle = (listId, newTitle) => {
+        const newList = lists.map(list => {
+            if (list.id === listId) {
+                return {
+                    ...list,
+                    title: newTitle
+                };
+            }
+            return list;
+        });
+        setLists(newList);
+    };
     
     return (
         <div>
@@ -138,8 +169,16 @@ const UserPage = () => {
                                 {...provided.droppableProps}
                                 ref={provided.innerRef}
                                 className="flex justify-center min-w-full">
-                                <ToDoList listId={list.id} tasks={list.tasks} addTask={addTaskToList} removeTask={removeTaskFromList} 
-                                addSubTaskToTask={addSubTaskToTask} removeSubTaskFromTask={removeSubTaskFromTask}/>
+                                <ToDoList 
+                                listId={list.id} 
+                                tasks={list.tasks} 
+                                listName={list.title}
+                                addTask={addTaskToList} 
+                                removeTask={removeTaskFromList} 
+                                removeList={() => removeList(list.id)}
+                                updateListTitle={updateListTitle}
+                                addSubTaskToTask={addSubTaskToTask} 
+                                removeSubTaskFromTask={removeSubTaskFromTask}/>
                                 {provided.placeholder}
                             </div>
                             )}
