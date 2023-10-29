@@ -1,17 +1,25 @@
 from flask import Blueprint, request, jsonify
-from flask_login import login_required, current_user
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from database import db
-from models import List, Task, SubTask
+from models import User, List, Task, SubTask
 
-api = Blueprint('api', __name__)
+api = Blueprint('api', __name__, url_prefix='/api/')
+
+def get_current_user():
+    email = get_jwt_identity()
+    return User.query.filter_by(email=email).first()
 
 # Create a new list
 @api.route('/list', methods=['POST'])
-@login_required
+@jwt_required()
 def create_list():
+    # Replaced current_user with get_current_user()
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "User not authenticated"}), 401
     try:
         data = request.json
-        new_list = List(name=data['name'], user_id=current_user.id)
+        new_list = List(name=data['name'], user_id=user.id)
         db.session.add(new_list)
         db.session.commit()
         return jsonify({"message": "List created successfully", "id": new_list.id}), 201
@@ -20,11 +28,12 @@ def create_list():
 
 # Create a new task in a specific list
 @api.route('/list/<int:list_id>/task', methods=['POST'])
-@login_required
+@jwt_required()
 def create_task(list_id):
+    user = get_current_user()
     try:
         data = request.json
-        new_task = Task(title=data['title'], user_id=current_user.id, list_id=list_id)
+        new_task = Task(title=data['title'], user_id=user.id, list_id=list_id)
         db.session.add(new_task)
         db.session.commit()
         return jsonify({"message": "Task added successfully", "id": new_task.id}), 201
@@ -33,7 +42,7 @@ def create_task(list_id):
 
 # Create a new subtask for a specific task
 @api.route('/task/<int:task_id>/subtask', methods=['POST'])
-@login_required
+@jwt_required()
 def create_subtask(task_id):
     try:
         data = request.json
@@ -46,10 +55,11 @@ def create_subtask(task_id):
 
 
 @api.route('/list/<int:list_id>', methods=['DELETE'])
-@login_required
+@jwt_required()
 def delete_list(list_id):
+    user = get_current_user()
     try:
-        list_to_delete = List.query.filter_by(id=list_id, user_id=current_user.id).first()
+        list_to_delete = List.query.filter_by(id=list_id, user_id=user.id).first()
         if not list_to_delete:
             return jsonify({"error": "List not found"}), 404
         db.session.delete(list_to_delete)
@@ -59,10 +69,11 @@ def delete_list(list_id):
         return jsonify({"error": str(e)}), 500
 
 @api.route('/task/<int:task_id>', methods=['DELETE'])
-@login_required
+@jwt_required()
 def delete_task(task_id):
+    user = get_current_user()
     try:
-        task_to_delete = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
+        task_to_delete = Task.query.filter_by(id=task_id, user_id=user.id).first()
         if not task_to_delete:
             return jsonify({"error": "Task not found"}), 404
         db.session.delete(task_to_delete)
@@ -73,10 +84,11 @@ def delete_task(task_id):
 
 
 @api.route('/subtask/<int:subtask_id>', methods=['DELETE'])
-@login_required
+@jwt_required()
 def delete_subtask(subtask_id):
+    user = get_current_user()
     try:
-        subtask_to_delete = SubTask.query.filter_by(id=subtask_id).join(Task).filter_by(user_id=current_user.id).first()
+        subtask_to_delete = SubTask.query.filter_by(id=subtask_id).join(Task).filter_by(user_id=user.id).first()
         if not subtask_to_delete:
             return jsonify({"error": "Subtask not found"}), 404
         db.session.delete(subtask_to_delete)
@@ -87,10 +99,11 @@ def delete_subtask(subtask_id):
 
 
 @api.route('/task/<int:task_id>', methods=['PUT'])
-@login_required
+@jwt_required()
 def update_task(task_id):
+    user = get_current_user()
     try:
-        task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
+        task = Task.query.filter_by(id=task_id, user_id=user.id).first()
         if not task:
             return jsonify({"error": "Task not found"}), 404
         data = request.json
@@ -102,10 +115,11 @@ def update_task(task_id):
         return jsonify({"error": str(e)}), 500
 
 @api.route('/subtask/<int:subtask_id>', methods=['PUT'])
-@login_required
+@jwt_required()
 def update_subtask(subtask_id):
+    user = get_current_user()
     try:
-        subtask = SubTask.query.filter_by(id=subtask_id).join(Task).filter_by(user_id=current_user.id).first()
+        subtask = SubTask.query.filter_by(id=subtask_id).join(Task).filter_by(user_id=user.id).first()
         if not subtask:
             return jsonify({"error": "Subtask not found"}), 404
         data = request.json
@@ -122,14 +136,15 @@ def update_subtask(subtask_id):
 
 
 @api.route('/task/<int:task_id>/move/<int:new_list_id>', methods=['PUT'])
-@login_required
+@jwt_required()
 def move_task(task_id, new_list_id):
+    user = get_current_user()
     try:
-        task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
+        task = Task.query.filter_by(id=task_id, user_id=user.id).first()
         if not task:
             return jsonify({"error": "Task not found"}), 404
 
-        new_list = List.query.filter_by(id=new_list_id, user_id=current_user.id).first()
+        new_list = List.query.filter_by(id=new_list_id, user_id=user.id).first()
         if not new_list:
             return jsonify({"error": "New list not found"}), 404
         
@@ -138,3 +153,75 @@ def move_task(task_id, new_list_id):
         return jsonify({"message": f"Task moved to list {new_list.name}"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@api.route('/list/<int:list_id>', methods=['PUT'])
+@jwt_required()
+def update_list_title(list_id):
+    user = get_current_user()
+    try:
+        # Retrieve the list that matches the list_id and current user's id
+        list_to_update = List.query.filter_by(id=list_id, user_id=user.id).first()
+
+        # If the list is not found, return an error
+        if not list_to_update:
+            return jsonify({"error": "List not found"}), 404
+
+        # Get the updated title from the request data
+        data = request.json
+        list_to_update.name = data.get('name', list_to_update.name)
+
+        # Commit the changes to the database
+        db.session.commit()
+        
+        # Return a success response
+        return jsonify({"message": "List title updated successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+
+
+@api.route('/list', methods=['GET'])
+@jwt_required()
+def get_lists():
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "User not authenticated"}), 401
+    try:
+        user_lists = List.query.filter_by(user_id=user.id).all()
+        return jsonify([list_item.serialize() for list_item in user_lists]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/list/<int:list_id>/tasks', methods=['GET'])
+@jwt_required()
+def get_tasks(list_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "User not authenticated"}), 401
+    try:
+        tasks_in_list = Task.query.filter_by(list_id=list_id, user_id=user.id).all()
+        return jsonify([task.serialize() for task in tasks_in_list]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/task/<int:task_id>/subtasks', methods=['GET'])
+@jwt_required()
+def get_subtasks(task_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "User not authenticated"}), 401
+    try:
+        # Ensure the task belongs to the user first
+        task = Task.query.filter_by(id=task_id, user_id=user.id).first()
+        if not task:
+            return jsonify({"error": "Task not found"}), 404
+
+        subtasks_in_task = SubTask.query.filter_by(task_id=task_id).all()
+        return jsonify([subtask.serialize() for subtask in subtasks_in_task]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+

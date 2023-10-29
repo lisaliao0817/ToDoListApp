@@ -21,7 +21,15 @@ class List(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    tasks = db.relationship('Task', backref='list', lazy=True)
+    tasks = db.relationship('Task', backref='list', lazy=True, cascade='all, delete-orphan')
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'user_id': self.user_id,
+            'tasks': [task.serialize() for task in self.tasks]  
+        }
 
 
 class Task(db.Model):
@@ -45,4 +53,12 @@ class SubTask(db.Model):
     title = db.Column(db.String(120), nullable=False)
     status = db.Column(db.String(50), nullable=False, default='pending')
     task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'status': self.status,
+            'task_id': self.task_id
+        }
 

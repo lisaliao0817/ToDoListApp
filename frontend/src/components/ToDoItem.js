@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { ChevronDownIcon, ChevronRightIcon, PencilSquareIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const ToDoItem = ({ 
+  taskId,
   item, 
   removeTask, 
   level, 
@@ -11,6 +14,7 @@ const ToDoItem = ({
     const [title, setTitle] = useState(item.title);
     const [status, setStatus] = useState('pending');
     const [isExpanded, setIsExpanded] = useState(true); 
+    const navigate = useNavigate();
 
     const markComplete = () => {
         setStatus('completed');
@@ -20,10 +24,35 @@ const ToDoItem = ({
         setStatus('pending');
     };
 
-    const editTask = () => {
+    const editTask = async (taskId, title, status) => {
         const newTitle = prompt('Edit task title', title);
         if (newTitle) {
-            setTitle(newTitle);
+            try {
+                // Call the backend to update the task
+                console.log("Task ID:", taskId);
+                const response = await axios.put(`http://127.0.0.1:5000/api/task/${taskId}`, { 
+                    title: newTitle,
+                    status: status  // Assuming you want to send the current status
+                });
+    
+                // Check if the task was successfully updated
+                if (response.status === 200) {
+                    setTitle(newTitle);  // Update the frontend state for title
+                    // Optionally, update any other frontend states if required
+                } else {
+                    // Handle any errors returned from the backend
+                    console.error("Error updating task:", response.data.error);
+                }
+            } catch (error) {
+                // Handle any other errors (e.g., network errors)
+                console.error("An error occurred:", error.message);
+                if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+                    navigate('/login'); 
+                }
+                else {
+                    window.alert("There was an issue moving the task. Please try again.");
+                }
+            }
         }
     };
 
@@ -53,7 +82,7 @@ const ToDoItem = ({
                     {title}
                 </div>
                 <div className='flex space-x-1 mt-1 group-hover:opacity-100 group-hover:visible opacity-0 invisible'>
-                <button onClick={editTask} className="focus:outline-none">
+                <button onClick={() => editTask(taskId, title, status)} className="focus:outline-none">
                     <PencilSquareIcon className="h-5 w-5 hover:text-gray-500" />
                 </button>
                 <button onClick={() => removeTask(item.id)} className="focus:outline-none">

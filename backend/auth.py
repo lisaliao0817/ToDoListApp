@@ -1,12 +1,13 @@
-from flask import Blueprint, request, jsonify, redirect, url_for
+from flask import Blueprint, request, jsonify, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import login_user, logout_user, login_required
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
 from database import db
 from models import User
-import jwt
-import datetime
 
 auth = Blueprint('auth', __name__, url_prefix='/api/v1')
+
+# Setting up Flask-JWT-Extended
+jwt = JWTManager()
 
 @auth.route('/signup', methods=['POST'])
 def signup():
@@ -39,16 +40,14 @@ def login():
     if not user or not user.check_password(password):
         return jsonify({'message': 'Please check your login details and try again.'}), 401
 
-    token = jwt.encode({
-        'user_id': user.id, 
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-    }, 'YOUR_SECRET_KEY', algorithm="HS256")
+    # Instead of login_user, we'll generate a JWT
+    access_token = create_access_token(identity=email)
+    return jsonify({'message': 'Logged in successfully!', 'access_token': access_token}), 200
 
-    return jsonify({'token': token}), 200
-
-@auth.route('/logout')
-@login_required
+@auth.route('/logout', methods=['POST'])
+@jwt_required()  # Requires a valid access token to access
 def logout():
-    logout_user()
-    return redirect(url_for('auth.login'))
-
+    # With stateless JWT authentication, you can't truly "logout" a token.
+    # However, you can implement token revocation, or the front end can simply discard the token.
+    # For now, we'll return a successful message.
+    return jsonify({'message': 'Logged out successfully!'}), 200
