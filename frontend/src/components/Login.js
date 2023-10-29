@@ -9,7 +9,6 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const { setUser } = useContext(UserContext);
 
-    
 const handleSubmit = async (event) => {
   event.preventDefault();
   
@@ -19,23 +18,29 @@ const handleSubmit = async (event) => {
         password: password 
     });
       
-    setUser({ email: email });  // set the user after successful login
+    if (response.data && response.data.access_token) {  // change from response.data.token to response.data.access_token
+      const token = response.data.access_token;
+      axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
+  
+      setUser({ email: email, token: token });  // set the user with both email and token after successful login
+  }
+  
     console.log('Logged in successfully:', response.data.message);
 
     // Navigate to a dashboard or other page after successful login
     navigate('/');
 
   } catch (error) {
-      console.error('Login error:', error.response.data.message);
-      // Handle login errors like showing a notification or updating some state
-      if (error.response.data.message.includes("Please check your login details and try again.")) { // Modify this condition based on your backend's error message
-        window.alert("Please check your login details and try again."); // Display alert to the user
+      console.error('Login error:', error.response?.data?.message);
+      if (error.response?.data?.message.includes("Please check your login details and try again.")) {
+        window.alert("Please check your login details and try again."); 
     } else {
-        // Handle other signup errors, e.g., showing a notification to the user
+        // Handle other login errors, e.g., showing a notification to the user
         // ... your other error handling logic here ...
     }
   }
 };
+
 
     const handleSignupClick = () => {
         navigate('/signup'); // This will navigate the user to the Sign Up page

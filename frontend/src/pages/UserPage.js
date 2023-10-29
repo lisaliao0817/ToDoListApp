@@ -1,15 +1,47 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import ToDoList from '../components/ToDoList';
 import Header from '../components/Header';
 // add a feature that will allow users to drag a top-level task to another list. Its sublists should be moved as well
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import axios from 'axios';
 import UserContext from '../UserContext';
+import { useNavigate } from 'react-router-dom';
 
 
 const UserPage = () => {
     const [lists, setLists] = useState([]);
-    const { user, setUser } = useContext(UserContext);
+    const { user } = useContext(UserContext);
+    const navigate = useNavigate();
+
+
+    useEffect(() => {
+        const fetchLists = async () => {
+            try {
+                const response = await axios.get('http://127.0.0.1:5000/api/list', {
+                    headers: {
+                        Authorization: `Bearer ${user.token}`
+                    }
+                });
+                if (response.data) {
+                    setLists(response.data);
+                } else {
+                    window.alert("Error fetching the lists.");
+                }
+            } catch (error) {
+                console.error("Error fetching lists:", error);
+
+                if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+                    navigate('/login'); // assuming '/login' is your login route
+                } else {
+                    window.alert("There was an issue fetching your lists. Please try again.");
+                }
+            }
+        };
+
+        if (user) {
+            fetchLists();
+        }
+    }, [user, navigate]);
 
     const addNewList = async () => {
         const title = window.prompt("Enter the title for the new list:");
@@ -17,25 +49,58 @@ const UserPage = () => {
         if (title) {
             try {
                 // Make a POST request to create a new list
-                const response = await axios.post('http://127.0.0.1:5000/api/list', { name: title }, { withCredentials: true });
+                // console.log("user.token", user.token);
+                const response = await axios.post('http://127.0.0.1:5000/api/list', { name: title }, {
+                    headers: {
+                        Authorization: `Bearer ${user.token}`
+                    }
+                });
+
     
                 if (response.data && response.data.id) {
-                    setLists([...lists, { id: response.data.id, title: title, tasks: [] }]);
+                    setLists([...lists, { id: response.data.id, name: title, tasks: [] }]);
                 } else {
                     window.alert("Error creating the list.");
                 }
             } catch (error) {
                 console.error("Error creating list:", error);
-                window.alert("There was an issue creating the list. Please try again.");
+
+                if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+                    navigate('/login'); // assuming '/login' is your login route
+                } else {
+                    window.alert("There was an issue creating the list. Please try again.");
+                }
             }
         }
     };
     
     
     
-    const removeList = (listId) => {
-        const newList = lists.filter(list => list.id !== listId);
-        setLists(newList);
+    // removeList has an internal server error now. Fix the bug
+    const removeList = async (listId) => {
+        try {
+            // API call to delete the list
+            const response = await axios.delete(`http://127.0.0.1:5000/api/list/${listId}`, {
+                headers: {
+                    'Authorization': `Bearer ${user.token}`
+                }
+            });
+    
+            if (response.status === 200) {
+                // If successful, update the state
+                const newList = lists.filter(list => list.id !== listId);
+                setLists(newList);
+            } else {
+                // Handle potential error messages from the API here
+                console.error("Failed to delete the list: ", response.data.error);
+            }
+        } catch (error) {
+            console.error("Error deleting the list: ", error);
+
+            if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+                navigate('/login'); 
+            }
+        }
     };
     
 
@@ -55,22 +120,26 @@ const UserPage = () => {
     
             // Make the API call to update the task's list_id in the backend
             try {
-                const response = await fetch(`/api/task/${taskToMove.id}/move/${destList.id}`, {
-                    method: 'PUT',
+                const response = await axios.put(`/api/task/${taskToMove.id}/move/${destList.id}`, {}, {
                     headers: {
                         'Content-Type': 'application/json',
-                        // Add authentication headers if necessary
+                        Authorization: `Bearer ${user.token}`
                     },
                 });
     
-                const data = await response.json();
                 if (response.status !== 200) {
-                    throw new Error(data.error);
+                    throw new Error(response.data.error);
                 }
             } catch (error) {
                 console.error("Failed to move the task:", error);
                 // You might want to handle this more gracefully in production,
                 // such as showing a notification to the user, or reverting the drag-and-drop.
+                if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+                    navigate('/login'); 
+                }
+                else {
+                    window.alert("There was an issue moving the task. Please try again.");
+                }
             }
         } else {
             // If in different lists, move the task
@@ -85,36 +154,81 @@ const UserPage = () => {
 
 
 
-    const addTaskToList = (listId, title) => {
+    const addTaskToList = async (listId, title) => {  
         if (!title || title.trim() === "") {
             window.alert("Task title cannot be empty!");
             return;
         }
     
-        const newList = lists.map(list => {
-            if (list.id === listId) {
-                return {
-                    ...list,
-                    tasks: [...list.tasks, { id: Date.now(), title: title.trim(), subtasks: [] }]
-                };
+        try {
+            // Make a POST request to create a new task
+            const response = await axios.post(`http://127.0.0.1:5000/api/list/${listId}/task`, { title: title }, {  // Use backticks and 'title' key
+                headers: {
+                    Authorization: `Bearer ${user.token}`
+                }
+            });
+    
+            const { message, id } = response.data;  // Destructure 'message' and 'id'
+    
+            if (message && message === "Task added successfully") {
+                const newList = lists.map(list => {
+                    if (list.id === listId) {
+                        return {
+                            ...list,
+                            tasks: [...list.tasks, { id: id, title: title.trim(), subtasks: [] }]
+                        };
+                    }
+                    return list;
+                });
+                setLists(newList);
             }
-            return list;
-        });
-        setLists(newList);
+        } catch (error) {
+            console.error("Error adding task:", error);
+            if (error.response && error.response.data && error.response.data.error) {
+                window.alert(`Error: ${error.response.data.error}`);
+                if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+                    navigate('/login'); 
+                }
+            } else {
+                window.alert("An unexpected error occurred.");
+            }
+        }
     };
     
-    // New function to remove a task from a specific list
-    const removeTaskFromList = (listId, taskId) => {
-        const newList = lists.map(list => {
-            if (list.id === listId) {
-                return {
-                    ...list,
-                    tasks: list.tasks.filter(task => task.id !== taskId)
-                };
+
+
+
+    
+    const removeTaskFromList = async (listId, taskId) => {
+        try {
+            // Call the backend to delete the task
+            const response = await axios.delete(`http://127.0.0.1:5000/api/task/${taskId}`);
+    
+            // Check if the task was successfully deleted
+            if (response.status === 200) {
+                const newList = lists.map(list => {
+                    if (list.id === listId) {
+                        return {
+                            ...list,
+                            tasks: list.tasks.filter(task => task.id !== taskId)
+                        };
+                    }
+                    return list;
+                });
+                setLists(newList);
+            } else {
+                // Handle any errors returned from the backend
+                console.error("Error deleting task:", response.data.error);
             }
-            return list;
-        });
-        setLists(newList);
+        } catch (error) {
+            // Handle any other errors (e.g., network errors)
+            console.error("An error occurred:", error.message);
+            if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+                navigate('/login'); 
+            } else {
+                window.alert("There was an issue deleting the task. Please try again.");
+            }
+        }
     };
 
 
@@ -180,21 +294,41 @@ const UserPage = () => {
         setLists(newList);
     };
     
-    const updateListTitle = (listId, newTitle) => {
-        const newList = lists.map(list => {
-            if (list.id === listId) {
-                return {
-                    ...list,
-                    title: newTitle
-                };
+    const updateListTitle = async (listId, newTitle) => {
+        try {
+            // Call the backend to update the list title
+            const response = await axios.put(`http://127.0.0.1:5000/api/list/${listId}`, { name: newTitle });
+    
+            // Check if the list title was successfully updated
+            if (response.status === 200) {
+                const newList = lists.map(list => {
+                    if (list.id === listId) {
+                        return {
+                            ...list,
+                            name: newTitle
+                        };
+                    }
+                    return list;
+                });
+                setLists(newList);
+            } else {
+                // Handle any errors returned from the backend
+                console.error("Error updating list title:", response.data.error);
             }
-            return list;
-        });
-        setLists(newList);
+        } catch (error) {
+            // Handle any other errors (e.g., network errors)
+            console.error("An error occurred:", error.message);
+            if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+                navigate('/login'); 
+            } else {
+                window.alert("There was an issue updating the list title. Please try again.");
+            }
+        }
     };
     
     return (
         <div>
+            
             <Header />
     
             {/* Use a container with some horizontal padding and center everything */}
@@ -216,7 +350,7 @@ const UserPage = () => {
                                 <ToDoList 
                                 listId={list.id} 
                                 tasks={list.tasks} 
-                                listName={list.title}
+                                listName={list.name}
                                 addTask={addTaskToList} 
                                 removeTask={removeTaskFromList} 
                                 removeList={() => removeList(list.id)}

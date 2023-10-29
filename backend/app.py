@@ -6,22 +6,26 @@ import os
 from database import db
 from flask import jsonify
 from datetime import timedelta
+from flask_jwt_extended import JWTManager
+from auth import jwt 
 
 def create_app():
     app = Flask(__name__)
-
+    app.config['JWT_SECRET_KEY'] = 'your-secret-key'  # replace this with your secret key
+    
     # CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "http://localhost:3000"}})
     CORS(app, supports_credentials=True)
+
     db_path = os.path.join(os.getcwd(), 'db.sqlite')
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
 
     app.config['SECRET_KEY'] = 'secret-key-goes-here'
-    app.config['SESSION_TYPE'] = 'filesystem'
-    app.config['SESSION_COOKIE_HTTPONLY'] = True
-    # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
-    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
-    app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-    
+    # app.config['SESSION_TYPE'] = 'filesystem'
+    # app.config['SESSION_COOKIE_HTTPONLY'] = True
+
+    # app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+    # app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+    jwt.init_app(app)
     db.init_app(app)
 
     login_manager = LoginManager()
@@ -40,13 +44,9 @@ def create_app():
 
     from models import User
     
-
     with app.app_context():
         db.create_all()
 
-
-
-    
     # blueprint for auth routes in our app
     from auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint)

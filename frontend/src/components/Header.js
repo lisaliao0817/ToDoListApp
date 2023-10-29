@@ -7,19 +7,32 @@ export default function Header() {
   const { user, setUser } = useContext(UserContext);
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    try {
-      // Send a request to the backend logout endpoint
-      await axios.post('http://127.0.0.1:5000/api/v1/logout');
+  // const handleLogout = async () => {
+  //   try {
+  //     // Send a request to the backend logout endpoint
+  //     await axios.post('http://127.0.0.1:5000/api/v1/logout');
 
-      // Clear user from React context
-      setUser(null);
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error.response?.data?.message || error.message);
-      // Handle other logout errors, e.g., showing a notification to the user
-      // ... your other error handling logic here ...
-    }
+  //     // Clear user from React context
+  //     setUser(null);
+  //     navigate('/login');
+  //   } catch (error) {
+  //     console.error('Logout error:', error.response?.data?.message || error.message);
+  //     // Handle other logout errors, e.g., showing a notification to the user
+  //     // ... your other error handling logic here ...
+  //   }
+  // };
+
+
+  const handleLogout = () => {
+    // If you don't need to inform the backend about logout, remove the axios call.
+    // If you need to invalidate the token or perform other server-side operations on logout, keep it.
+  
+    // Clear the JWT from Axios headers
+    delete axios.defaults.headers.common['Authorization'];
+  
+    // Clear user from React context
+    setUser(null);
+    navigate('/login');
   };
 
   return (

@@ -39,7 +39,7 @@ const ToDoList = ({ listId, tasks, addTask, removeTask, addSubTaskToTask, remove
                     ref={provided.innerRef}
                   >
                     <ToDoItem 
-                      key={task.id} 
+                      taskId={task.id} 
                       item={task} 
                       level={1}
                       listId={listId} // Pass the listId
