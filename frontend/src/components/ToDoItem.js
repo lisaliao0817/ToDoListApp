@@ -1,40 +1,107 @@
-import React, { useState } from 'react';
-import { ChevronDownIcon, ChevronRightIcon, PencilSquareIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { ChevronDownIcon, ChevronRightIcon, PencilSquareIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 
-const ToDoItem = ({ 
-  taskId,
-  item, 
-  removeTask, 
-  level, 
-  onAddSubTask, 
-  onRemoveSubTask
+
+const ToDoItem = ({
+    listId,
+    taskId,
+    item,
+    onRemoveTask,
+    level,
+    onCreateTask
 }) => {
     const [title, setTitle] = useState(item.title);
-    const [status, setStatus] = useState('pending');
-    const [isExpanded, setIsExpanded] = useState(true); 
+    const [status, setStatus] = useState(item.status);
+    const [isExpanded, setIsExpanded] = useState(true);
     const navigate = useNavigate();
+    const [subTasks, setSubTasks] = useState([]);
+
+
+    // This code is used to fetch subtasks from the server and store them in the subTasks state variable. 
+    // It is used to fetch all subtasks when the task component is loaded, and when a task is deleted.
+    useEffect(() => {
+        const fetchSubTasks = async () => {
+            try {
+                const response = await axios.get(`http://127.0.0.1:5000/api/task/${taskId}/subtasks`);
+                if (response.status === 200) {
+                    setSubTasks(response.data);
+                } else {
+                    console.error("Error fetching subtasks:", response.data.error);
+                }
+            } catch (error) {
+                console.error("An error occurred when fetching subtasks:", error.message);
+            }
+        };
+        fetchSubTasks();
+    }, [taskId, onRemoveTask]);
+
+
+    const handleCreateSubTask = (listId, title, parentTaskId) => {
+        onCreateTask(listId, title, parentTaskId, (newSubTask) => {
+            setSubTasks((prevSubTasks) => [...prevSubTasks, newSubTask]);
+        });
+    };
+
+    const handleRemoveSubTask = (listId, taskId) => {
+        onRemoveTask(listId, taskId, (oldSubTask) => {
+            setSubTasks((prevSubTasks) => prevSubTasks.filter(subTask => subTask !== oldSubTask));
+        });
+    };
+
+
+    // This code updates the task status in the database. 
+    // It sends a PUT request to the server with the task ID and the new status, 
+    // and if the request is successful, it updates the status in the local state.
+    const updateTaskStatus = async (newStatus) => {
+        try {
+            const response = await axios.put(`http://127.0.0.1:5000/api/task/${taskId}`, {
+                title: title, // keep the title unchanged
+                status: newStatus
+            });
+
+            if (response.status === 200) {
+                setStatus(newStatus);
+            } else {
+                console.error("Error updating task status:", response.data.error);
+            }
+        } catch (error) {
+            console.error("An error occurred while updating task status:", error.message);
+            if (error.response && error.response.status === 401 && error.response.data.error === "Token has expired") {
+                window.alert("Your token has expired. Please log in again.");
+                navigate('/login');
+            }
+            else {
+                window.alert("There was an issue updating the task status. Please try again.");
+            }
+        }
+    };
+
+
 
     const markComplete = () => {
-        setStatus('completed');
+        updateTaskStatus('completed');
     };
 
     const undoComplete = () => {
-        setStatus('pending');
+        updateTaskStatus('pending');
     };
 
+
+    // This function is called when the user clicks on the edit button for a task. 
+    // It calls the backend to update the task with the new title, then updates the frontend state with the new title.
     const editTask = async (taskId, title, status) => {
         const newTitle = prompt('Edit task title', title);
         if (newTitle) {
             try {
                 // Call the backend to update the task
                 console.log("Task ID:", taskId);
-                const response = await axios.put(`http://127.0.0.1:5000/api/task/${taskId}`, { 
+                const response = await axios.put(`http://127.0.0.1:5000/api/task/${taskId}`, {
                     title: newTitle,
                     status: status  // Assuming you want to send the current status
                 });
-    
+
                 // Check if the task was successfully updated
                 if (response.status === 200) {
                     setTitle(newTitle);  // Update the frontend state for title
@@ -46,8 +113,9 @@ const ToDoItem = ({
             } catch (error) {
                 // Handle any other errors (e.g., network errors)
                 console.error("An error occurred:", error.message);
-                if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
-                    navigate('/login'); 
+                if (error.response && error.response.status === 401 && error.response.data.error === "Token has expired") {
+                    window.alert("Your token has expired. Please log in again.");
+                    navigate('/login');
                 }
                 else {
                     window.alert("There was an issue moving the task. Please try again.");
@@ -56,55 +124,61 @@ const ToDoItem = ({
         }
     };
 
-    if (level === 1 && status === 'completed') {
-        return null; // Do not render top-level completed tasks.
-    }
-    
+
     return (
         <div className="my-1">
             <div className="flex items-start space-x-2 group">
-                {item.subtasks && item.subtasks.length > 0 && (
-                  <div className='mt-1'>
-                    <button onClick={() => setIsExpanded(!isExpanded)} className="focus:outline-none">
-                        {isExpanded ? <ChevronDownIcon className="h-5 w-5 text-gray-500" /> : <ChevronRightIcon className="h-5 w-5 text-gray-500" />}
-                    </button>
-                  </div>
+
+                {/* if the task has children, show a chevron icon to expand/collapse the children. */}
+                {item.children && item.children.length > 0 && (
+                    <div className='mt-1'>
+                        <button onClick={() => setIsExpanded(!isExpanded)} className="focus:outline-none">
+                            {isExpanded ? <ChevronDownIcon className="h-5 w-5 text-gray-500" /> : <ChevronRightIcon className="h-5 w-5 text-gray-500" />}
+                        </button>
+                    </div>
                 )}
+
                 <div>
-                <input
-                    type="checkbox"
-                    checked={status === 'completed'}
-                    onChange={status === 'completed' ? undoComplete : markComplete}
-                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                />
+                    <input
+                        type="checkbox"
+                        checked={status === 'completed'}
+                        onChange={status === 'completed' ? undoComplete : markComplete}
+                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                    />
                 </div>
+
                 <div className={`flex-grow ${status === 'completed' ? 'line-through text-gray-400' : 'text-gray-800'}`} >
                     {title}
                 </div>
+
+                {/* Edit, Remove, Add subtasks icons */}
                 <div className='flex space-x-1 mt-1 group-hover:opacity-100 group-hover:visible opacity-0 invisible'>
-                <button onClick={() => editTask(taskId, title, status)} className="focus:outline-none">
-                    <PencilSquareIcon className="h-5 w-5 hover:text-gray-500" />
-                </button>
-                <button onClick={() => removeTask(item.id)} className="focus:outline-none">
-                    <TrashIcon className="h-5 w-5 hover:text-gray-500" />
-                </button>
-                {level < 3 && (
-                    <button onClick={() => onAddSubTask(item.id, prompt('Enter subtask title'))} className="focus:outline-none">
-                        <PlusIcon className="h-5 w-5 hover:text-gray-500" />
+                    <button onClick={() => editTask(taskId, title, status)} className="focus:outline-none">
+                        <PencilSquareIcon className="h-5 w-5 hover:text-gray-500" />
                     </button>
-                )}
+                    <button onClick={() => handleRemoveSubTask(listId, taskId)} className="focus:outline-none">
+                        <TrashIcon className="h-5 w-5 hover:text-gray-500" />
+                    </button>
+                    {level < 3 && (
+                        <button onClick={() => handleCreateSubTask(listId, prompt('Enter subtask title'), taskId)} className="focus:outline-none">
+                            <PlusIcon className="h-5 w-5 hover:text-gray-500" />
+                        </button>
+                    )}
                 </div>
+
             </div>
-            {isExpanded && item.subtasks && (
+
+            {isExpanded && subTasks && (
                 <ul className="pl-2">
-                    {item.subtasks.map(subTask => (
+                    {subTasks.map(subTask => (
                         <li key={subTask.id} className="pl-5 pb-1">
-                            <ToDoItem 
-                                item={subTask} 
-                                removeTask={onRemoveSubTask} 
+                            <ToDoItem
+                                taskId={subTask.id}
+                                item={subTask}
                                 level={level + 1}
-                                onAddSubTask={onAddSubTask}
-                                onRemoveSubTask={onRemoveSubTask}
+                                listId={listId}
+                                onCreateTask={onCreateTask}
+                                onRemoveTask={onRemoveTask}
                             />
                         </li>
                     ))}
