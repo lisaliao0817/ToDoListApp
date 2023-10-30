@@ -153,7 +153,7 @@ const UserPage = () => {
     };
 
 
-    const createTask = async (listId, title, parentId = null) => {
+    const createTask = async (listId, title, parentId = null, callback) => {
         if (!title || title.trim() === "") {
             window.alert("Task title cannot be empty!");
             return;
@@ -213,6 +213,10 @@ const UserPage = () => {
                     return list;
                 });
                 setLists(newList);
+
+                if (callback && typeof callback === 'function') {
+                    callback(newTask);
+                }
             } else {
                 console.error("Error adding task or subtask:", response.data.error);
             }

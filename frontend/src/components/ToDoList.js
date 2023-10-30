@@ -43,7 +43,7 @@ const ToDoList = ({ listId, tasks, createTask, removeTask, removeSubTaskFromTask
                       level={1}
                       listId={listId} // Pass the listId
                       // onCreateTask={(parentId, title) => createTask(listId, parentId, title)}
-                      onCreateTask={(listId, title, parentId) => createTask(listId, title, parentId)}
+                      onCreateTask={(listId, title, parentId, callback) => createTask(listId, title, parentId, callback)}
                       onRemoveSubTask={(taskId) => removeSubTaskFromTask(listId, taskId)}
                       removeTask={() => removeTask(listId, task.id)} 
                     />

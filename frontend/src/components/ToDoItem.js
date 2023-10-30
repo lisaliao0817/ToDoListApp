@@ -18,10 +18,11 @@ const ToDoItem = ({
     const navigate = useNavigate();
     const [subTasks, setSubTasks] = useState([]);
 
+
     useEffect(() => {
         const fetchSubTasks = async () => {
             try {
-                const response = await axios.get(`http://127.0.0.1:5000/api/task/${taskId}/subtask`);
+                const response = await axios.get(`http://127.0.0.1:5000/api/task/${taskId}/subtasks`);
                 if (response.status === 200) {
                     setSubTasks(response.data);
                 } else {
@@ -32,8 +33,16 @@ const ToDoItem = ({
             }
         };
 
+
         fetchSubTasks();
     }, [taskId]);
+
+    
+    const handleCreateSubTask = (listId, title, parentTaskId) => {
+        onCreateTask(listId, title, parentTaskId, (newSubTask) => {
+            setSubTasks((prevSubTasks) => [...prevSubTasks, newSubTask]);
+        });
+    };
 
 
     const markComplete = () => {
@@ -109,7 +118,8 @@ const ToDoItem = ({
                     <TrashIcon className="h-5 w-5 hover:text-gray-500" />
                 </button>
                 {level < 3 && (
-                    <button onClick={() => onCreateTask(listId, prompt('Enter subtask title'), taskId)} className="focus:outline-none">
+                    // <button onClick={() => onCreateTask(listId, prompt('Enter subtask title'), taskId)} className="focus:outline-none">
+                    <button onClick={() => handleCreateSubTask(listId, prompt('Enter subtask title'), taskId)} className="focus:outline-none">
                         <PlusIcon className="h-5 w-5 hover:text-gray-500" />
                     </button>
                 )}
