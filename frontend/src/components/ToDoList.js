@@ -1,11 +1,11 @@
 
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import ToDoItem from './ToDoItem';
 import { Draggable } from 'react-beautiful-dnd';
 import { PlusCircleIcon, TrashIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
-const ToDoList = ({ listId, tasks, createTask, removeList, listName, updateListTitle }) => {
+const ToDoList = ({ listId, tasks, createTask, removeList, removeTask, listName, updateListTitle }) => {
 
   const editListTitle = () => {
     const newListName = prompt('Edit list title', listName);
@@ -13,9 +13,6 @@ const ToDoList = ({ listId, tasks, createTask, removeList, listName, updateListT
       updateListTitle(listId, newListName);
     }
   }
-
-
-
 
 
   return (
@@ -45,11 +42,9 @@ const ToDoList = ({ listId, tasks, createTask, removeList, listName, updateListT
                   taskId={task.id}
                   item={task}
                   level={1}
-                  listId={listId} // Pass the listId
-                  // onCreateTask={(parentId, title) => createTask(listId, parentId, title)}
+                  listId={listId}
                   onCreateTask={(listId, title, parentId, callback) => createTask(listId, title, parentId, callback)}
-                // onRemoveSubTask={(taskId) => removeSubTaskFromTask(listId, taskId)}
-                // removeTask={() => removeTask(listId, task.id)}
+                  onRemoveTask={(listId, taskId, callback) => removeTask(listId, taskId, callback)}
                 />
               </div>
             )}

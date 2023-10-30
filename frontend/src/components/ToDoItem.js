@@ -1,55 +1,22 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDownIcon, ChevronRightIcon, PencilSquareIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import UserContext from '../UserContext';
 
 const ToDoItem = ({ 
   listId,
   taskId,
   item, 
-//   removeTask, 
+  onRemoveTask, 
   level, 
   onCreateTask
 }) => {
     const [title, setTitle] = useState(item.title);
-    const [status, setStatus] = useState('pending');
+    const [status, setStatus] = useState(item.status);
     const [isExpanded, setIsExpanded] = useState(true); 
     const navigate = useNavigate();
     const [subTasks, setSubTasks] = useState([]);
 
-    const [lists, setLists] = useState([]);
-    const { user } = useContext(UserContext);
-
-
-    useEffect(() => {
-        const fetchLists = async () => {
-            try {
-                const response = await axios.get('http://127.0.0.1:5000/api/list', {
-                    headers: {
-                        Authorization: `Bearer ${user.token}`
-                    }
-                });
-                if (response.data) {
-                    setLists(response.data);
-                } else {
-                    window.alert("Error fetching the lists.");
-                }
-            } catch (error) {
-                console.error("Error fetching lists:", error);
-
-                if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
-                    navigate('/login'); // assuming '/login' is your login route
-                } else {
-                    window.alert("There was an issue fetching your lists. Please try again.");
-                }
-            }
-        };
-
-        if (user) {
-            fetchLists();
-        }
-    }, [user, navigate]);
 
 
     useEffect(() => {
@@ -65,10 +32,8 @@ const ToDoItem = ({
                 console.error("An error occurred when fetching subtasks:", error.message);
             }
         };
-
-
         fetchSubTasks();
-    }, [taskId]);
+    }, [taskId, onRemoveTask]);
 
 
     const handleCreateSubTask = (listId, title, parentTaskId) => {
@@ -77,13 +42,44 @@ const ToDoItem = ({
         });
     };
 
+    const handleRemoveSubTask = (listId, taskId) => {
+        onRemoveTask(listId, taskId, (oldSubTask) => {
+            setSubTasks((prevSubTasks) => prevSubTasks.filter(subTask => subTask !== oldSubTask));
+        });
+    };
+    
+    const updateTaskStatus = async (newStatus) => {
+        try {
+            const response = await axios.put(`http://127.0.0.1:5000/api/task/${taskId}`, { 
+                title: title, // keep the title unchanged
+                status: newStatus
+            });
+
+            if (response.status === 200) {
+                setStatus(newStatus);
+            } else {
+                console.error("Error updating task status:", response.data.error);
+            }
+        } catch (error) {
+            console.error("An error occurred while updating task status:", error.message);
+            if (error.response && error.response.status === 401 && error.response.data.error === "Token has expired") {
+                window.alert("Your token has expired. Please log in again.");
+                navigate('/login'); 
+            }
+            else {
+                window.alert("There was an issue updating the task status. Please try again.");
+            }
+        }
+    };
+
+
 
     const markComplete = () => {
-        setStatus('completed');
+        updateTaskStatus('completed');
     };
 
     const undoComplete = () => {
-        setStatus('pending');
+        updateTaskStatus('pending');
     };
 
     const editTask = async (taskId, title, status) => {
@@ -108,7 +104,8 @@ const ToDoItem = ({
             } catch (error) {
                 // Handle any other errors (e.g., network errors)
                 console.error("An error occurred:", error.message);
-                if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+                if (error.response && error.response.status === 401 && error.response.data.error === "Token has expired") {
+                    window.alert("Your token has expired. Please log in again.");
                     navigate('/login'); 
                 }
                 else {
@@ -118,48 +115,11 @@ const ToDoItem = ({
         }
     };
 
-    const removeTask = async (listId, taskId) => {
-        try {
-            // Call the backend to delete the task
-            const response = await axios.delete(`http://127.0.0.1:5000/api/task/${taskId}`);
-    
-            // Check if the task was successfully deleted
-            if (response.status === 200) {
-                const newList = lists.map(list => {
-                    console.log("task id", taskId);
-                    if (list.id === listId) {
-                        return {
-                            ...list,
-                            tasks: list.tasks.filter(task => task.id !== taskId)
-                        };
-                    }
-                    return list;
-                });
-                setLists(newList);
-            } else {
-                // Handle any errors returned from the backend
-                console.error("Error deleting task:", response.data.error);
-            }
-        } catch (error) {
-            // Handle any other errors (e.g., network errors, backend errors)
-            console.error("An error occurred:", error.message);
-            if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
-                navigate('/login');
-            } else {
-                window.alert("There was an issue deleting the task. Please try again.");
-            }
-        }
-    };
-
-
-    // if (level === 1 && status === 'completed') {
-    //     return null; // Do not render top-level completed tasks.
-    // }
     
     return (
         <div className="my-1">
             <div className="flex items-start space-x-2 group">
-                {item.subtasks && item.subtasks.length > 0 && (
+                {item.children && item.children.length > 0 && (
                   <div className='mt-1'>
                     <button onClick={() => setIsExpanded(!isExpanded)} className="focus:outline-none">
                         {isExpanded ? <ChevronDownIcon className="h-5 w-5 text-gray-500" /> : <ChevronRightIcon className="h-5 w-5 text-gray-500" />}
@@ -181,7 +141,7 @@ const ToDoItem = ({
                 <button onClick={() => editTask(taskId, title, status)} className="focus:outline-none">
                     <PencilSquareIcon className="h-5 w-5 hover:text-gray-500" />
                 </button>
-                <button onClick={() => removeTask(listId, taskId)} className="focus:outline-none">
+                <button onClick={() => handleRemoveSubTask(listId, taskId)} className="focus:outline-none">
                     <TrashIcon className="h-5 w-5 hover:text-gray-500" />
                 </button>
                 {level < 3 && (
@@ -197,13 +157,12 @@ const ToDoItem = ({
                     {subTasks.map(subTask => (
                         <li key={subTask.id} className="pl-5 pb-1">
                             <ToDoItem 
-                                listId={listId}
                                 taskId={subTask.id}
                                 item={subTask} 
-                                removeTask={removeTask} 
                                 level={level + 1}
+                                listId={listId}
                                 onCreateTask={onCreateTask}
-                                // onRemoveSubTask={onRemoveSubTask}
+                                onRemoveTask={onRemoveTask} 
                             />
                         </li>
                     ))}

@@ -7,26 +7,12 @@ export default function Header() {
   const { user, setUser } = useContext(UserContext);
   const navigate = useNavigate();
 
-  // const handleLogout = async () => {
-  //   try {
-  //     // Send a request to the backend logout endpoint
-  //     await axios.post('http://127.0.0.1:5000/api/v1/logout');
-
-  //     // Clear user from React context
-  //     setUser(null);
-  //     navigate('/login');
-  //   } catch (error) {
-  //     console.error('Logout error:', error.response?.data?.message || error.message);
-  //     // Handle other logout errors, e.g., showing a notification to the user
-  //     // ... your other error handling logic here ...
-  //   }
-  // };
-
 
   const handleLogout = () => {
-    // If you don't need to inform the backend about logout, remove the axios call.
-    // If you need to invalidate the token or perform other server-side operations on logout, keep it.
-  
+    // Remove the token from localStorage
+    localStorage.removeItem('jwtToken');
+    localStorage.removeItem('userEmail');
+    
     // Clear the JWT from Axios headers
     delete axios.defaults.headers.common['Authorization'];
   
@@ -39,10 +25,10 @@ export default function Header() {
     <header className="bg-white">
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-x-6 p-6 lg:px-8" aria-label="Global">
         <div className="flex lg:flex-1">
-          <a href="#" className="-m-1.5 p-1.5">
+          <div className="-m-1.5 p-1.5">
             <span className="sr-only">Your Company</span>
             <img className="h-8 w-auto" src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600" alt="" />
-          </a>
+          </div>
         </div>
         
         <div className="flex flex-1 items-center justify-end gap-x-6">

@@ -5,11 +5,13 @@ from models import User, List, Task
 
 api = Blueprint('api', __name__, url_prefix='/api/')
 
+
 def get_current_user():
     email = get_jwt_identity()
     return User.query.filter_by(email=email).first()
 
 
+# Get all lists for current user
 @api.route('/list', methods=['GET'])
 @jwt_required()
 def get_lists():
@@ -21,6 +23,7 @@ def get_lists():
         return jsonify([list_item.serialize() for list_item in user_lists]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
 
 # Create a new list
 @api.route('/list', methods=['POST'])
@@ -57,6 +60,7 @@ def delete_list(list_id):
         return jsonify({"message": "List and associated tasks deleted successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
     
 
 @api.route('/list/<int:list_id>', methods=['PUT'])

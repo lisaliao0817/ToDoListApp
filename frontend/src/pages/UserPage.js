@@ -1,7 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import ToDoList from '../components/ToDoList';
 import Header from '../components/Header';
-// add a feature that will allow users to drag a top-level task to another list. Its sublists should be moved as well
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import axios from 'axios';
 import UserContext from '../UserContext';
@@ -10,8 +9,23 @@ import { useNavigate } from 'react-router-dom';
 
 const UserPage = () => {
     const [lists, setLists] = useState([]);
-    const { user } = useContext(UserContext);
+    const { user, setUser } = useContext(UserContext);  
     const navigate = useNavigate();
+
+    useEffect(() => {
+        // Check if token exists in localStorage
+        const token = localStorage.getItem('jwtToken');
+        if (token) {
+            // Set the token in axios defaults for subsequent API calls
+            axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
+
+            // Update the UserContext to ensure the user is considered logged in
+            // This assumes you previously stored the email along with the token.
+            // If not, you might need to adjust this logic.
+            const userEmail = localStorage.getItem('userEmail');
+            setUser({ email: userEmail, token: token });
+        }
+    }, [setUser]);  // Empty dependency array ensures this runs once when the component mounts
 
 
     useEffect(() => {
@@ -30,7 +44,8 @@ const UserPage = () => {
             } catch (error) {
                 console.error("Error fetching lists:", error);
 
-                if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+                if (error.response && error.response.status === 401 && error.response.data.error === "Token has expired") {
+                    window.alert("Your token has expired. Please log in again.");
                     navigate('/login'); // assuming '/login' is your login route
                 } else {
                     window.alert("There was an issue fetching your lists. Please try again.");
@@ -42,6 +57,7 @@ const UserPage = () => {
             fetchLists();
         }
     }, [user, navigate]);
+
 
     const addNewList = async () => {
         const title = window.prompt("Enter the title for the new list:");
@@ -65,7 +81,8 @@ const UserPage = () => {
             } catch (error) {
                 console.error("Error creating list:", error);
 
-                if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+                if (error.response && error.response.status === 401 && error.response.data.error === "Token has expired") {
+                    window.alert("Your token has expired. Please log in again.");
                     navigate('/login'); // assuming '/login' is your login route
                 } else {
                     window.alert("There was an issue creating the list. Please try again.");
@@ -76,8 +93,8 @@ const UserPage = () => {
     
     
     
-    // removeList has an internal server error now. Fix the bug
-    const removeList = async (listId) => {
+// The removeList function takes the listId as an argument and deletes the list from the database
+const removeList = async (listId) => {
         try {
             // API call to delete the list
             const response = await axios.delete(`http://127.0.0.1:5000/api/list/${listId}`, {
@@ -97,7 +114,8 @@ const UserPage = () => {
         } catch (error) {
             console.error("Error deleting the list: ", error);
 
-            if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+            if (error.response && error.response.status === 401 && error.response.data.error === "Token has expired") {
+                window.alert("Your token has expired. Please log in again.");
                 navigate('/login'); 
             }
         }
@@ -120,7 +138,7 @@ const UserPage = () => {
     
             // Make the API call to update the task's list_id in the backend
             try {
-                const response = await axios.put(`/api/task/${taskToMove.id}/move/${destList.id}`, {}, {
+                const response = await axios.put(`http://127.0.0.1:5000/api/task/${taskToMove.id}/move/${destList.id}`, {}, {
                     headers: {
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${user.token}`
@@ -134,7 +152,8 @@ const UserPage = () => {
                 console.error("Failed to move the task:", error);
                 // You might want to handle this more gracefully in production,
                 // such as showing a notification to the user, or reverting the drag-and-drop.
-                if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+                if (error.response && error.response.status === 401 && error.response.data.error === "Token has expired") {
+                    window.alert("Your token has expired. Please log in again.");
                     navigate('/login'); 
                 }
                 else {
@@ -161,7 +180,7 @@ const UserPage = () => {
     
         const newTask = {
             title: title.trim(),
-            subtasks: [],
+            children: [],
         };
     
         try {
@@ -191,13 +210,13 @@ const UserPage = () => {
                             return {
                                 ...task,
                                 // subtasks: [...task.subtasks, newTask]
-                                subtasks: [...(task.subtasks || []), newTask]
+                                children: [...(task.children || []), newTask]
                             };
                         } else {
                             return {
                                 ...task,
                                 // subtasks: addTaskRecursive(task.subtasks)
-                                subtasks: addTaskRecursive(task.subtasks || [])
+                                children: addTaskRecursive(task.children || [])
                             };
                         }
                     });
@@ -226,7 +245,8 @@ const UserPage = () => {
             console.error("API call failed:", error);
             if (error.response && error.response.data && error.response.data.error) {
                 window.alert(`Error: ${error.response.data.error}`);
-                if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+                if (error.response && error.response.status === 401 && error.response.data.error === "Token has expired") {
+                    window.alert("Your token has expired. Please log in again.");
                     navigate('/login'); 
                 }
             } else {
@@ -236,64 +256,61 @@ const UserPage = () => {
         }
     };
     
-
-    
-    // const removeTask = async (listId, taskId) => {
-    //     try {
-    //         // Call the backend to delete the task
-    //         const response = await axios.delete(`http://127.0.0.1:5000/api/task/${taskId}`);
-    
-    //         // Check if the task was successfully deleted
-    //         if (response.status === 200) {
-    //             const newList = lists.map(list => {
-    //                 console.log("task id", taskId);
-    //                 if (list.id === listId) {
-    //                     return {
-    //                         ...list,
-    //                         tasks: list.tasks.filter(task => task.id !== taskId)
-    //                     };
-    //                 }
-    //                 return list;
-    //             });
-    //             setLists(newList);
-    //         } else {
-    //             // Handle any errors returned from the backend
-    //             console.error("Error deleting task:", response.data.error);
-    //         }
-    //     } catch (error) {
-    //         // Handle any other errors (e.g., network errors, backend errors)
-    //         console.error("An error occurred:", error.message);
-    //         if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
-    //             navigate('/login');
-    //         } else {
-    //             window.alert("There was an issue deleting the task. Please try again.");
-    //         }
-    //     }
-    // };
     
 
+    
+    const removeTask = async (listId, taskId, callback) => {
+        try {
+            // Call the backend to delete the task
+            const response = await axios.delete(`http://127.0.0.1:5000/api/task/${taskId}`);
+    
+            // Check if the task was successfully deleted
+            if (response.status === 200) {
+                const removeTaskFromChildren = (tasks) => {
+                    return tasks.reduce((acc, task) => {
+                        if (task.id === taskId) {
+                            // If this task matches, don't include it in the new list
+                            return acc;
+                        } else {
+                            // Otherwise, check its children
+                            const updatedChildren = removeTaskFromChildren(task.children || []);
+                            return [...acc, { ...task, children: updatedChildren }];
+                        }
+                    }, []);
+                };
+    
+                const newList = lists.map(list => {
+                    if (list.id === listId) {
+                        return {
+                            ...list,
+                            tasks: removeTaskFromChildren(list.tasks)
+                        };
+                    }
+                    return list;
+                });
+                
+                setLists(newList);
 
-
-  
-    // const removeSubTaskFromTask = (listId, taskId) => {
-    //     const removeSubTaskRecursive = (tasks) => {
-    //         return tasks.filter(task => task.id !== taskId).map(task => ({
-    //             ...task,
-    //             subtasks: removeSubTaskRecursive(task.subtasks)
-    //         }));
-    //     };
-  
-    //     const newList = lists.map(list => {
-    //         if (list.id === listId) {
-    //             return {
-    //                 ...list,
-    //                 tasks: removeSubTaskRecursive(list.tasks)
-    //             };
-    //         }
-    //         return list;
-    //     });
-    //     setLists(newList);
-    // };
+                if (callback && typeof callback === 'function') {
+                    callback(newList);
+                }
+            } else {
+                // Handle any errors returned from the backend
+                console.error("Error deleting task:", response.data.error);
+            }
+        } catch (error) {
+            // Handle any other errors (e.g., network errors, backend errors)
+            console.error("An error occurred:", error.message);
+            if (error.response && error.response.status === 401 && error.response.data.error === "Token has expired") {
+                window.alert("Your token has expired. Please log in again.");
+                navigate('/login');
+            } else {
+                window.alert("There was an issue deleting the task. Please try again.");
+            }
+        }
+    };
+    
+    
     
     const updateListTitle = async (listId, newTitle) => {
         try {
@@ -319,7 +336,8 @@ const UserPage = () => {
         } catch (error) {
             // Handle any other errors (e.g., network errors)
             console.error("An error occurred:", error.message);
-            if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+            if (error.response && error.response.status === 401 && error.response.data.error === "Token has expired") {
+                window.alert("Your token has expired. Please log in again.");
                 navigate('/login'); 
             } else {
                 window.alert("There was an issue updating the list title. Please try again.");
@@ -327,9 +345,6 @@ const UserPage = () => {
         }
     };
 
-    useEffect(() => {
-        console.log("lists ", lists);
-      }, [lists]);
     
     return (
         <div>
@@ -357,6 +372,7 @@ const UserPage = () => {
                                         tasks={list.tasks.filter(task => !task.parent_id)}  
                                         listName={list.name}
                                         createTask={createTask} 
+                                        removeTask={removeTask}
                                         removeList={() => removeList(list.id)}
                                         updateListTitle={updateListTitle}
                                     />
@@ -387,105 +403,3 @@ const UserPage = () => {
 };
 
 export default UserPage;
-
-
-
-
-
-    // const addTaskToList = async (listId, title) => {  
-    //     if (!title || title.trim() === "") {
-    //         window.alert("Task title cannot be empty!");
-    //         return;
-    //     }
-    
-    //     try {
-    //         // Make a POST request to create a new task
-    //         const response = await axios.post(`http://127.0.0.1:5000/api/list/${listId}/task`, { title: title }, {  // Use backticks and 'title' key
-    //             headers: {
-    //                 Authorization: `Bearer ${user.token}`
-    //             }
-    //         });
-    
-    //         const { message, id } = response.data;  // Destructure 'message' and 'id'
-    
-    //         if (message && message === "Task added successfully") {
-    //             const newList = lists.map(list => {
-    //                 if (list.id === listId) {
-    //                     return {
-    //                         ...list,
-    //                         tasks: [...list.tasks, { id: id, title: title.trim(), subtasks: [] }]
-    //                     };
-    //                 }
-    //                 return list;
-    //             });
-    //             setLists(newList);
-    //         }
-    //     } catch (error) {
-    //         console.error("Error adding task:", error);
-    //         if (error.response && error.response.data && error.response.data.error) {
-    //             window.alert(`Error: ${error.response.data.error}`);
-    //             if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
-    //                 navigate('/login'); 
-    //             }
-    //         } else {
-    //             window.alert("An unexpected error occurred.");
-    //         }
-    //     }
-    // };
-
-
-
-// const addSubTaskToTask = async (listId, parentId, title) => {
-//     if (!title || title.trim() === "") {
-//         window.alert("Subtask title cannot be empty!");
-//         return;
-//     }
-
-//     const newTask = {
-//         title: title.trim(),
-//         subtasks: [],
-//     };
-
-//     try {
-//         // Make an API call to the Flask backend
-//         const response = await axios.post(`http://127.0.0.1:5000/api/list/${listId}/task`, {
-//             title: newTask.title
-//         });
-
-//         if (response.status === 201) {
-//             newTask.id = response.data.id;
-
-//             const addSubTaskRecursive = (tasks) => {
-//                 return tasks.map(task => {
-//                     if (task.id === parentId) {
-//                         return {
-//                             ...task,
-//                             subtasks: [...task.subtasks, newTask]
-//                         };
-//                     } else {
-//                         return {
-//                             ...task,
-//                             subtasks: addSubTaskRecursive(task.subtasks)
-//                         };
-//                     }
-//                 });
-//             }
-
-//             const newList = lists.map(list => {
-//                 if (list.id === listId) {
-//                     return {
-//                         ...list,
-//                         tasks: addSubTaskRecursive(list.tasks)
-//                     };
-//                 }
-//                 return list;
-//             });
-//             setLists(newList);
-//         } else {
-//             console.error("Error adding subtask:", response.data.error);
-//         }
-
-//     } catch (error) {
-//         console.error("API call failed:", error);
-//     }
-// };

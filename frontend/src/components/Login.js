@@ -23,6 +23,9 @@ const handleSubmit = async (event) => {
       axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
   
       setUser({ email: email, token: token });  // set the user with both email and token after successful login
+      // Store the token in localStorage for persistence
+      localStorage.setItem('jwtToken', token);
+      localStorage.setItem('userEmail', email);
   }
   
     console.log('Logged in successfully:', response.data.message);

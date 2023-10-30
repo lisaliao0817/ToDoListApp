@@ -8,6 +8,9 @@ from flask import jsonify
 from datetime import timedelta
 from flask_jwt_extended import JWTManager
 from auth import jwt 
+from flask_jwt_extended.exceptions import JWTExtendedException
+from jwt import ExpiredSignatureError, InvalidTokenError
+
 
 def create_app():
     app = Flask(__name__)
@@ -41,6 +44,10 @@ def create_app():
     @login_manager.unauthorized_handler
     def unauthorized():
         return jsonify({'message': 'Unauthorized access'}), 401
+    
+    @app.errorhandler(ExpiredSignatureError)
+    def handle_expired_token(e):
+        return jsonify({"error": "Token has expired"}), 401
 
     from models import User
     
