@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import ToDoItem from './ToDoItem';
 import { Draggable } from 'react-beautiful-dnd';
@@ -16,10 +14,10 @@ const ToDoList = ({ listId, tasks, createTask, removeList, removeTask, listName,
 
 
   return (
-
     <div className="bg-white shadow-md rounded-lg p-6 mt-10 min-w-full group/list">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold mb-4">{listName}</h2>
+
         <div className='group-hover/list:opacity-100 group-hover/list:visible opacity-0 invisible'>
           <button onClick={editListTitle} className="focus:outline-none">
             <PencilSquareIcon className="h-5 w-5 mb-3 cursor-pointer hover:text-gray-500 " />
@@ -28,7 +26,9 @@ const ToDoList = ({ listId, tasks, createTask, removeList, removeTask, listName,
             <TrashIcon className="h-5 w-5 mb-3 cursor-pointer hover:text-gray-500  ml-1" />
           </button>
         </div>
+
       </div>
+
       <div className="space-y-2">
         {tasks.map((task, index) => (
           <Draggable key={task.id} draggableId={String(task.id)} index={index}>
@@ -51,12 +51,14 @@ const ToDoList = ({ listId, tasks, createTask, removeList, removeTask, listName,
           </Draggable>
         ))}
       </div>
+
       <div className="mt-4">
         <button
           onClick={() => createTask(listId, prompt('Enter task title'))}>
           <PlusCircleIcon className="h-5 w-5 hover:text-gray-500" />
         </button>
       </div>
+
     </div>
   );
 };

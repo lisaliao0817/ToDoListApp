@@ -1,6 +1,5 @@
-from flask import Blueprint, request, jsonify, current_app
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
+from flask import Blueprint, request, jsonify
+from flask_jwt_extended import JWTManager, create_access_token
 from database import db
 from models import User
 
@@ -9,13 +8,17 @@ auth = Blueprint('auth', __name__, url_prefix='/api/v1')
 # Setting up Flask-JWT-Extended
 jwt = JWTManager()
 
+
+# This code checks if the email address already exists in the database. 
+# If it does, an error message is returned and the user is asked to try again.
+# If the email address does not already exist, the user is created and added to the database.
 @auth.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
 
     email = data['email']
     password = data['password']
-    
+
     user = User.query.filter_by(email=email).first()
 
     if user:
@@ -28,6 +31,8 @@ def signup():
 
     return jsonify({'message': 'Successfully signed up! Please login.'}), 201
 
+
+# This code is responsible for logging in a user.
 @auth.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -43,11 +48,3 @@ def login():
     # Instead of login_user, we'll generate a JWT
     access_token = create_access_token(identity=email)
     return jsonify({'message': 'Logged in successfully!', 'access_token': access_token}), 200
-
-@auth.route('/logout', methods=['POST'])
-@jwt_required()  # Requires a valid access token to access
-def logout():
-    # With stateless JWT authentication, you can't truly "logout" a token.
-    # However, you can implement token revocation, or the front end can simply discard the token.
-    # For now, we'll return a successful message.
-    return jsonify({'message': 'Logged out successfully!'}), 200
