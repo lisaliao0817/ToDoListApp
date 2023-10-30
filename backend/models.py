@@ -46,9 +46,9 @@ class Task(db.Model):
             "id": self.id,
             "title": self.title,
             "status": self.status,
+            "parent_id": self.parent_id,
             "children": [child.serialize() for child in self.children]  # Recursive serialization for child tasks
         }
-
 
 
 # class SubTask(db.Model):

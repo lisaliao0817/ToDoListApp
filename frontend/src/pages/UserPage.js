@@ -178,7 +178,7 @@ const UserPage = () => {
     
             if (message && message === "Task added successfully") {
                 newTask.id = id;
-    
+                
                 const addTaskRecursive = (tasks) => {
                     if (!tasks) return [];
 
@@ -213,6 +213,7 @@ const UserPage = () => {
                     return list;
                 });
                 setLists(newList);
+                console.log("newTask", newTask.id);
 
                 if (callback && typeof callback === 'function') {
                     callback(newTask);
@@ -236,62 +237,63 @@ const UserPage = () => {
     };
     
 
-
     
-    const removeTaskFromList = async (listId, taskId) => {
-        try {
-            // Call the backend to delete the task
-            const response = await axios.delete(`http://127.0.0.1:5000/api/task/${taskId}`);
+    // const removeTask = async (listId, taskId) => {
+    //     try {
+    //         // Call the backend to delete the task
+    //         const response = await axios.delete(`http://127.0.0.1:5000/api/task/${taskId}`);
     
-            // Check if the task was successfully deleted
-            if (response.status === 200) {
-                const newList = lists.map(list => {
-                    if (list.id === listId) {
-                        return {
-                            ...list,
-                            tasks: list.tasks.filter(task => task.id !== taskId)
-                        };
-                    }
-                    return list;
-                });
-                setLists(newList);
-            } else {
-                // Handle any errors returned from the backend
-                console.error("Error deleting task:", response.data.error);
-            }
-        } catch (error) {
-            // Handle any other errors (e.g., network errors)
-            console.error("An error occurred:", error.message);
-            if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
-                navigate('/login'); 
-            } else {
-                window.alert("There was an issue deleting the task. Please try again.");
-            }
-        }
-    };
+    //         // Check if the task was successfully deleted
+    //         if (response.status === 200) {
+    //             const newList = lists.map(list => {
+    //                 console.log("task id", taskId);
+    //                 if (list.id === listId) {
+    //                     return {
+    //                         ...list,
+    //                         tasks: list.tasks.filter(task => task.id !== taskId)
+    //                     };
+    //                 }
+    //                 return list;
+    //             });
+    //             setLists(newList);
+    //         } else {
+    //             // Handle any errors returned from the backend
+    //             console.error("Error deleting task:", response.data.error);
+    //         }
+    //     } catch (error) {
+    //         // Handle any other errors (e.g., network errors, backend errors)
+    //         console.error("An error occurred:", error.message);
+    //         if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+    //             navigate('/login');
+    //         } else {
+    //             window.alert("There was an issue deleting the task. Please try again.");
+    //         }
+    //     }
+    // };
+    
 
 
 
   
-    const removeSubTaskFromTask = (listId, taskId) => {
-        const removeSubTaskRecursive = (tasks) => {
-            return tasks.filter(task => task.id !== taskId).map(task => ({
-                ...task,
-                subtasks: removeSubTaskRecursive(task.subtasks)
-            }));
-        };
+    // const removeSubTaskFromTask = (listId, taskId) => {
+    //     const removeSubTaskRecursive = (tasks) => {
+    //         return tasks.filter(task => task.id !== taskId).map(task => ({
+    //             ...task,
+    //             subtasks: removeSubTaskRecursive(task.subtasks)
+    //         }));
+    //     };
   
-        const newList = lists.map(list => {
-            if (list.id === listId) {
-                return {
-                    ...list,
-                    tasks: removeSubTaskRecursive(list.tasks)
-                };
-            }
-            return list;
-        });
-        setLists(newList);
-    };
+    //     const newList = lists.map(list => {
+    //         if (list.id === listId) {
+    //             return {
+    //                 ...list,
+    //                 tasks: removeSubTaskRecursive(list.tasks)
+    //             };
+    //         }
+    //         return list;
+    //     });
+    //     setLists(newList);
+    // };
     
     const updateListTitle = async (listId, newTitle) => {
         try {
@@ -324,6 +326,10 @@ const UserPage = () => {
             }
         }
     };
+
+    useEffect(() => {
+        console.log("lists ", lists);
+      }, [lists]);
     
     return (
         <div>
@@ -339,28 +345,27 @@ const UserPage = () => {
                 {/* This will define a grid. Each list will try to fit in a 1/4 column, but will not shrink below its natural width */}
                 <DragDropContext onDragEnd={handleOnDragEnd}>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 justify-items-start">
-                        {lists.map((list, index) => (
+                    {lists.map((list, index) => (
                         <Droppable key={list.id} droppableId={String(list.id)}>
                             {(provided) => (
-                            <div 
-                                {...provided.droppableProps}
-                                ref={provided.innerRef}
-                                className="flex justify-center min-w-full">
-                                <ToDoList 
-                                listId={list.id} 
-                                tasks={list.tasks} 
-                                listName={list.name}
-                                createTask={createTask} 
-                                removeTask={removeTaskFromList} 
-                                removeList={() => removeList(list.id)}
-                                updateListTitle={updateListTitle}
-                                // addSubTaskToTask={addSubTaskToTask} 
-                                removeSubTaskFromTask={removeSubTaskFromTask}/>
-                                {provided.placeholder}
-                            </div>
+                                <div 
+                                    {...provided.droppableProps}
+                                    ref={provided.innerRef}
+                                    className="flex justify-center min-w-full">
+                                    <ToDoList 
+                                        listId={list.id} 
+                                        tasks={list.tasks.filter(task => !task.parent_id)}  
+                                        listName={list.name}
+                                        createTask={createTask} 
+                                        removeList={() => removeList(list.id)}
+                                        updateListTitle={updateListTitle}
+                                    />
+                                    {provided.placeholder}
+                                </div>
                             )}
                         </Droppable>
-                        ))}
+                    ))}
+
                     </div>
                     </DragDropContext>
     

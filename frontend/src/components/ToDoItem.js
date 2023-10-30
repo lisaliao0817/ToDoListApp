@@ -1,22 +1,55 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { ChevronDownIcon, ChevronRightIcon, PencilSquareIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import UserContext from '../UserContext';
 
 const ToDoItem = ({ 
   listId,
   taskId,
   item, 
-  removeTask, 
+//   removeTask, 
   level, 
-  onCreateTask, 
-  onRemoveSubTask
+  onCreateTask
 }) => {
     const [title, setTitle] = useState(item.title);
     const [status, setStatus] = useState('pending');
     const [isExpanded, setIsExpanded] = useState(true); 
     const navigate = useNavigate();
     const [subTasks, setSubTasks] = useState([]);
+
+    const [lists, setLists] = useState([]);
+    const { user } = useContext(UserContext);
+
+
+    useEffect(() => {
+        const fetchLists = async () => {
+            try {
+                const response = await axios.get('http://127.0.0.1:5000/api/list', {
+                    headers: {
+                        Authorization: `Bearer ${user.token}`
+                    }
+                });
+                if (response.data) {
+                    setLists(response.data);
+                } else {
+                    window.alert("Error fetching the lists.");
+                }
+            } catch (error) {
+                console.error("Error fetching lists:", error);
+
+                if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+                    navigate('/login'); // assuming '/login' is your login route
+                } else {
+                    window.alert("There was an issue fetching your lists. Please try again.");
+                }
+            }
+        };
+
+        if (user) {
+            fetchLists();
+        }
+    }, [user, navigate]);
 
 
     useEffect(() => {
@@ -85,6 +118,40 @@ const ToDoItem = ({
         }
     };
 
+    const removeTask = async (listId, taskId) => {
+        try {
+            // Call the backend to delete the task
+            const response = await axios.delete(`http://127.0.0.1:5000/api/task/${taskId}`);
+    
+            // Check if the task was successfully deleted
+            if (response.status === 200) {
+                const newList = lists.map(list => {
+                    console.log("task id", taskId);
+                    if (list.id === listId) {
+                        return {
+                            ...list,
+                            tasks: list.tasks.filter(task => task.id !== taskId)
+                        };
+                    }
+                    return list;
+                });
+                setLists(newList);
+            } else {
+                // Handle any errors returned from the backend
+                console.error("Error deleting task:", response.data.error);
+            }
+        } catch (error) {
+            // Handle any other errors (e.g., network errors, backend errors)
+            console.error("An error occurred:", error.message);
+            if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+                navigate('/login');
+            } else {
+                window.alert("There was an issue deleting the task. Please try again.");
+            }
+        }
+    };
+
+
     // if (level === 1 && status === 'completed') {
     //     return null; // Do not render top-level completed tasks.
     // }
@@ -114,7 +181,7 @@ const ToDoItem = ({
                 <button onClick={() => editTask(taskId, title, status)} className="focus:outline-none">
                     <PencilSquareIcon className="h-5 w-5 hover:text-gray-500" />
                 </button>
-                <button onClick={() => removeTask(item.id)} className="focus:outline-none">
+                <button onClick={() => removeTask(listId, taskId)} className="focus:outline-none">
                     <TrashIcon className="h-5 w-5 hover:text-gray-500" />
                 </button>
                 {level < 3 && (
@@ -133,10 +200,10 @@ const ToDoItem = ({
                                 listId={listId}
                                 taskId={subTask.id}
                                 item={subTask} 
-                                removeTask={onRemoveSubTask} 
+                                removeTask={removeTask} 
                                 level={level + 1}
                                 onCreateTask={onCreateTask}
-                                onRemoveSubTask={onRemoveSubTask}
+                                // onRemoveSubTask={onRemoveSubTask}
                             />
                         </li>
                     ))}
