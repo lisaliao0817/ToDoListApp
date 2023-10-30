@@ -1,20 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDownIcon, ChevronRightIcon, PencilSquareIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const ToDoItem = ({ 
+  listId,
   taskId,
   item, 
   removeTask, 
   level, 
-  onAddSubTask, 
+  onCreateTask, 
   onRemoveSubTask
 }) => {
     const [title, setTitle] = useState(item.title);
     const [status, setStatus] = useState('pending');
     const [isExpanded, setIsExpanded] = useState(true); 
     const navigate = useNavigate();
+    const [subTasks, setSubTasks] = useState([]);
+
+    useEffect(() => {
+        const fetchSubTasks = async () => {
+            try {
+                const response = await axios.get(`http://127.0.0.1:5000/api/task/${taskId}/subtask`);
+                if (response.status === 200) {
+                    setSubTasks(response.data);
+                } else {
+                    console.error("Error fetching subtasks:", response.data.error);
+                }
+            } catch (error) {
+                console.error("An error occurred when fetching subtasks:", error.message);
+            }
+        };
+
+        fetchSubTasks();
+    }, [taskId]);
+
 
     const markComplete = () => {
         setStatus('completed');
@@ -56,9 +76,9 @@ const ToDoItem = ({
         }
     };
 
-    if (level === 1 && status === 'completed') {
-        return null; // Do not render top-level completed tasks.
-    }
+    // if (level === 1 && status === 'completed') {
+    //     return null; // Do not render top-level completed tasks.
+    // }
     
     return (
         <div className="my-1">
@@ -89,21 +109,22 @@ const ToDoItem = ({
                     <TrashIcon className="h-5 w-5 hover:text-gray-500" />
                 </button>
                 {level < 3 && (
-                    <button onClick={() => onAddSubTask(item.id, prompt('Enter subtask title'))} className="focus:outline-none">
+                    <button onClick={() => onCreateTask(listId, prompt('Enter subtask title'), taskId)} className="focus:outline-none">
                         <PlusIcon className="h-5 w-5 hover:text-gray-500" />
                     </button>
                 )}
                 </div>
             </div>
-            {isExpanded && item.subtasks && (
+            {isExpanded && subTasks && (
                 <ul className="pl-2">
-                    {item.subtasks.map(subTask => (
+                    {subTasks.map(subTask => (
                         <li key={subTask.id} className="pl-5 pb-1">
                             <ToDoItem 
+                                taskId={subTask.id}
                                 item={subTask} 
                                 removeTask={onRemoveSubTask} 
                                 level={level + 1}
-                                onAddSubTask={onAddSubTask}
+                                onCreateTask={onCreateTask}
                                 onRemoveSubTask={onRemoveSubTask}
                             />
                         </li>

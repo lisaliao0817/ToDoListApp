@@ -153,49 +153,84 @@ const UserPage = () => {
     };
 
 
-
-    const addTaskToList = async (listId, title) => {  
+    const createTask = async (listId, title, parentId = null) => {
         if (!title || title.trim() === "") {
             window.alert("Task title cannot be empty!");
             return;
         }
     
+        const newTask = {
+            title: title.trim(),
+            subtasks: [],
+        };
+    
         try {
-            // Make a POST request to create a new task
-            const response = await axios.post(`http://127.0.0.1:5000/api/list/${listId}/task`, { title: title }, {  // Use backticks and 'title' key
+            const response = await axios.post(`http://127.0.0.1:5000/api/list/${listId}/task`, {
+                title: newTask.title,
+                parent_id: parentId
+            }, {
                 headers: {
                     Authorization: `Bearer ${user.token}`
                 }
             });
     
-            const { message, id } = response.data;  // Destructure 'message' and 'id'
+            const { message, id } = response.data;
     
             if (message && message === "Task added successfully") {
+                newTask.id = id;
+    
+                const addTaskRecursive = (tasks) => {
+                    if (!tasks) return [];
+
+                    if (!parentId) {
+                        return [...tasks, newTask];
+                    }
+    
+                    return tasks.map(task => {
+                        if (task.id === parentId) {
+                            return {
+                                ...task,
+                                // subtasks: [...task.subtasks, newTask]
+                                subtasks: [...(task.subtasks || []), newTask]
+                            };
+                        } else {
+                            return {
+                                ...task,
+                                // subtasks: addTaskRecursive(task.subtasks)
+                                subtasks: addTaskRecursive(task.subtasks || [])
+                            };
+                        }
+                    });
+                }
+    
                 const newList = lists.map(list => {
                     if (list.id === listId) {
                         return {
                             ...list,
-                            tasks: [...list.tasks, { id: id, title: title.trim(), subtasks: [] }]
+                            tasks: addTaskRecursive(list.tasks)
                         };
                     }
                     return list;
                 });
                 setLists(newList);
+            } else {
+                console.error("Error adding task or subtask:", response.data.error);
             }
+    
         } catch (error) {
-            console.error("Error adding task:", error);
+            console.error("API call failed:", error);
             if (error.response && error.response.data && error.response.data.error) {
                 window.alert(`Error: ${error.response.data.error}`);
                 if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
                     navigate('/login'); 
                 }
             } else {
+                console.error(error);
                 window.alert("An unexpected error occurred.");
             }
         }
     };
     
-
 
 
     
@@ -233,46 +268,6 @@ const UserPage = () => {
 
 
 
-    const addSubTaskToTask = (listId, parentId, title) => {
-        if (!title || title.trim() === "") {
-            window.alert("Subtask title cannot be empty!");
-            return;
-        }
-    
-        const newTask = {
-            id: Date.now(),
-            title: title.trim(),
-            subtasks: [],
-        };
-        
-        const addSubTaskRecursive = (tasks) => {
-            return tasks.map(task => {
-                if (task.id === parentId) {
-                    return {
-                        ...task,
-                        subtasks: [...task.subtasks, newTask]
-                    };
-                } else {
-                    return {
-                        ...task,
-                        subtasks: addSubTaskRecursive(task.subtasks)
-                    };
-                }
-            });
-        }
-    
-        const newList = lists.map(list => {
-            if (list.id === listId) {
-                return {
-                    ...list,
-                    tasks: addSubTaskRecursive(list.tasks)
-                };
-            }
-            return list;
-        });
-        setLists(newList);
-    };
-    
   
     const removeSubTaskFromTask = (listId, taskId) => {
         const removeSubTaskRecursive = (tasks) => {
@@ -351,11 +346,11 @@ const UserPage = () => {
                                 listId={list.id} 
                                 tasks={list.tasks} 
                                 listName={list.name}
-                                addTask={addTaskToList} 
+                                createTask={createTask} 
                                 removeTask={removeTaskFromList} 
                                 removeList={() => removeList(list.id)}
                                 updateListTitle={updateListTitle}
-                                addSubTaskToTask={addSubTaskToTask} 
+                                // addSubTaskToTask={addSubTaskToTask} 
                                 removeSubTaskFromTask={removeSubTaskFromTask}/>
                                 {provided.placeholder}
                             </div>
@@ -383,3 +378,105 @@ const UserPage = () => {
 };
 
 export default UserPage;
+
+
+
+
+
+    // const addTaskToList = async (listId, title) => {  
+    //     if (!title || title.trim() === "") {
+    //         window.alert("Task title cannot be empty!");
+    //         return;
+    //     }
+    
+    //     try {
+    //         // Make a POST request to create a new task
+    //         const response = await axios.post(`http://127.0.0.1:5000/api/list/${listId}/task`, { title: title }, {  // Use backticks and 'title' key
+    //             headers: {
+    //                 Authorization: `Bearer ${user.token}`
+    //             }
+    //         });
+    
+    //         const { message, id } = response.data;  // Destructure 'message' and 'id'
+    
+    //         if (message && message === "Task added successfully") {
+    //             const newList = lists.map(list => {
+    //                 if (list.id === listId) {
+    //                     return {
+    //                         ...list,
+    //                         tasks: [...list.tasks, { id: id, title: title.trim(), subtasks: [] }]
+    //                     };
+    //                 }
+    //                 return list;
+    //             });
+    //             setLists(newList);
+    //         }
+    //     } catch (error) {
+    //         console.error("Error adding task:", error);
+    //         if (error.response && error.response.data && error.response.data.error) {
+    //             window.alert(`Error: ${error.response.data.error}`);
+    //             if (error.response && error.response.status === 401 && error.response.data === "Token has expired") {
+    //                 navigate('/login'); 
+    //             }
+    //         } else {
+    //             window.alert("An unexpected error occurred.");
+    //         }
+    //     }
+    // };
+
+
+
+// const addSubTaskToTask = async (listId, parentId, title) => {
+//     if (!title || title.trim() === "") {
+//         window.alert("Subtask title cannot be empty!");
+//         return;
+//     }
+
+//     const newTask = {
+//         title: title.trim(),
+//         subtasks: [],
+//     };
+
+//     try {
+//         // Make an API call to the Flask backend
+//         const response = await axios.post(`http://127.0.0.1:5000/api/list/${listId}/task`, {
+//             title: newTask.title
+//         });
+
+//         if (response.status === 201) {
+//             newTask.id = response.data.id;
+
+//             const addSubTaskRecursive = (tasks) => {
+//                 return tasks.map(task => {
+//                     if (task.id === parentId) {
+//                         return {
+//                             ...task,
+//                             subtasks: [...task.subtasks, newTask]
+//                         };
+//                     } else {
+//                         return {
+//                             ...task,
+//                             subtasks: addSubTaskRecursive(task.subtasks)
+//                         };
+//                     }
+//                 });
+//             }
+
+//             const newList = lists.map(list => {
+//                 if (list.id === listId) {
+//                     return {
+//                         ...list,
+//                         tasks: addSubTaskRecursive(list.tasks)
+//                     };
+//                 }
+//                 return list;
+//             });
+//             setLists(newList);
+//         } else {
+//             console.error("Error adding subtask:", response.data.error);
+//         }
+
+//     } catch (error) {
+//         console.error("API call failed:", error);
+//     }
+// };

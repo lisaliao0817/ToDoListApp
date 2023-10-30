@@ -36,29 +36,32 @@ class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120), nullable=False)
     status = db.Column(db.String(50), nullable=False, default='pending')
-    list_id = db.Column(db.Integer, db.ForeignKey('list.id'), nullable=False)
+    list_id = db.Column(db.Integer, db.ForeignKey('list.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    subtasks = db.relationship('SubTask', backref='task', lazy=True)
+    parent_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=True)
+    children = db.relationship("Task", backref=db.backref('parent', remote_side=[id]))
 
     def serialize(self):
         return {
             "id": self.id,
             "title": self.title,
-            "status": self.status
+            "status": self.status,
+            "children": [child.serialize() for child in self.children]  # Recursive serialization for child tasks
         }
 
 
-class SubTask(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(120), nullable=False)
-    status = db.Column(db.String(50), nullable=False, default='pending')
-    task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
 
-    def serialize(self):
-        return {
-            'id': self.id,
-            'title': self.title,
-            'status': self.status,
-            'task_id': self.task_id
-        }
+# class SubTask(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     title = db.Column(db.String(120), nullable=False)
+#     status = db.Column(db.String(50), nullable=False, default='pending')
+#     task_id = db.Column(db.Integer, db.ForeignKey('task.id'))
+
+#     def serialize(self):
+#         return {
+#             'id': self.id,
+#             'title': self.title,
+#             'status': self.status,
+#             'task_id': self.task_id
+#         }
 

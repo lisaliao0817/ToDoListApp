@@ -1,12 +1,11 @@
 
 
-import React from 'react';
+import React  from 'react';
 import ToDoItem from './ToDoItem';
 import { Draggable } from 'react-beautiful-dnd';
 import { PlusCircleIcon, TrashIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
-const ToDoList = ({ listId, tasks, addTask, removeTask, addSubTaskToTask, removeSubTaskFromTask, removeList, listName, updateListTitle }) => {
-
+const ToDoList = ({ listId, tasks, createTask, removeTask, removeSubTaskFromTask, removeList, listName, updateListTitle }) => {
 
   const editListTitle = () => {
     const newListName = prompt('Edit list title', listName);
@@ -43,7 +42,8 @@ const ToDoList = ({ listId, tasks, addTask, removeTask, addSubTaskToTask, remove
                       item={task} 
                       level={1}
                       listId={listId} // Pass the listId
-                      onAddSubTask={(parentId, title) => addSubTaskToTask(listId, parentId, title)}
+                      // onCreateTask={(parentId, title) => createTask(listId, parentId, title)}
+                      onCreateTask={(listId, title, parentId) => createTask(listId, title, parentId)}
                       onRemoveSubTask={(taskId) => removeSubTaskFromTask(listId, taskId)}
                       removeTask={() => removeTask(listId, task.id)} 
                     />
@@ -54,7 +54,7 @@ const ToDoList = ({ listId, tasks, addTask, removeTask, addSubTaskToTask, remove
             </div>
             <div className="mt-4">
             <button 
-              onClick={() => addTask(listId, prompt('Enter task title'))}>
+              onClick={() => createTask(listId, prompt('Enter task title'))}>
                     <PlusCircleIcon className="h-5 w-5 hover:text-gray-500" />
                 </button>
             </div>
