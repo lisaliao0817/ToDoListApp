@@ -37,7 +37,7 @@ const ToDoItem = ({
         fetchSubTasks();
     }, [taskId]);
 
-    
+
     const handleCreateSubTask = (listId, title, parentTaskId) => {
         onCreateTask(listId, title, parentTaskId, (newSubTask) => {
             setSubTasks((prevSubTasks) => [...prevSubTasks, newSubTask]);
@@ -130,6 +130,7 @@ const ToDoItem = ({
                     {subTasks.map(subTask => (
                         <li key={subTask.id} className="pl-5 pb-1">
                             <ToDoItem 
+                                listId={listId}
                                 taskId={subTask.id}
                                 item={subTask} 
                                 removeTask={onRemoveSubTask} 
