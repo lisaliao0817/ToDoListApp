@@ -103,6 +103,12 @@ task's checkbox.
     - **tailwind.config.js**: Configuration file for TailwindCSS to customize styles or plugins.
 - **README.md**
 
+## Demo video
+Click on the following link to watch the video. 
+
+
+## AI statement
+ChatGPT has helped me tremendously in this assignment. It helped me create functions, routes, and models, guided me through the project, answered my questions, cleared my confusion for a lot of things, and debugged for me. However, there are times when it is not very useful and I had to either debug on my own or ask for help from other people. 
 
 
 
