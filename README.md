@@ -70,37 +70,45 @@ Allow users to view or hide subtasks linked to a main task, ensuring a clutter-f
 task's checkbox.
 
 ## Codebase Overview
-- **backend
-  - **app.py**
-  - **auth.py**
-  - **database.py**
-  - **models.py**
-  - **requirements.txt**
-  - **routes.py**
+- **backend**
+  - **app.py**: The main entry point for the Flask application. Initializes and runs the server.
+  - **auth.py**: Contains functions related to user authentication like login and signup.
+  - **database.py**: Handles database creation.
+  - **models.py**: Defines the database table models and their relationships using an ORM (SQLAlchemy).
+  - **requirements.txt**: Lists all the Python dependencies needed to run the backend.
+  - **routes.py**: Defines the API endpoints and their corresponding handlers for the application.
+
 - **frontend**
   - **dist**
-    - **output.css**
-  - **public**
+    - **output.css**: Compiled and optimized CSS from source styles from TailwindCSS.
+  - **public**: Contains static files and assets that can be directly accessed by the browser.
   - **src**
     - **components**
-      - **Header.js**
-      - **Login.js**
-      - **Signup.js**
-      - **ToDoItem.js**
-      - **ToDoList.js**
+      - **Header.js**: React component representing the header of the application.
+      - **Login.js**: React component for the login form and its functionalities.
+      - **Signup.js**: React component for the user registration form and related actions.
+      - **ToDoItem.js**: React component representing individual todo items. Includes functions like editing tasks' titles and updating task status.
+      - **ToDoList.js**: React component for showcasing a list of todo items.
     - **pages**
-      - **LoginPage.js**
-      - **SignupPage.js**
-      - **UserPage.js**
-    - **App.js**
-    - **index.css**
-    - **index.js**
-    - **UserContext.js**
-    - **package-lock.json**
-    - **package.json**
-    - **tailwind.config.js**
+      - **LoginPage.js**: A page dedicated to user login.
+      - **SignupPage.js**: A page dedicated to user registration.
+      - **UserPage.js**: User's main dashboard/homepage displaying their todo lists and tasks. Includes functions like creating lists and tasks, deleting lists and tasks, moving tasks
+        and updating lists' titles.
+    - **App.js** The main React application component that brings together all pages and components.
+    - **index.css**: contains directives for integrating Tailwind CSS styles into the application.
+    - **index.js**: Entry point for the React application, responsible for rendering the root component.
+    - **UserContext.js**: Context for managing and accessing user-related data across the application.
+    - **package-lock.json**: Automatically generated file to lock down the versions of npm dependencies.
+    - **package.json**: Lists project details, scripts, and npm dependencies.
+    - **tailwind.config.js**: Configuration file for TailwindCSS to customize styles or plugins.
 - **README.md**
 
+## Demo video
+Click on the following link to watch the video. 
+
+
+## AI statement
+ChatGPT has helped me tremendously in this assignment. It helped me create functions, routes, and models, guided me through the project, answered my questions, cleared my confusion for a lot of things, and debugged for me. However, there are times when it is not very useful and I had to either debug on my own or ask for help from other people. 
 
 
 
