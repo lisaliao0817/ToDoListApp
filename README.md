@@ -50,7 +50,8 @@ Offer users the flexibility to modify the names or titles of their previously cr
 Provide an option for users to remove any list they no longer require or deem irrelevant. The user can delete lists by clicking the trash icon beside the list title.
 
 ### Create tasks and subtasks
-Facilitate the addition of primary tasks and their subsequent subtasks within a particular list, allowing for layered task organization (up to three levels). The user can create tasks by clicking the plus icon either at the bottom of the list for top-level tasks or beside the task title for subtasks.
+Facilitate the addition of primary tasks and their subsequent subtasks within a particular list, allowing for layered task organization (up to three levels). The user can create tasks by
+clicking the plus icon either at the bottom of the list for top-level tasks or beside the task title for subtasks.
 
 ### Edit tasks' titles
 Equip users with the capability to alter the titles of their tasks and subtasks. The user can edit tasks' titles by clicking the pencil icon beside the task title.
@@ -65,5 +66,46 @@ Enable users to eliminate specific tasks or subtasks that have either been compl
 Allow users to reorganize and shift tasks from one list to another, optimizing task prioritization and management. The user can achieve this by dragging and dropping.
 
 ### Expand and collapse tasks
-Allow users to view or hide subtasks linked to a main task, ensuring a clutter-free visual interface and focused task management.
+Allow users to view or hide subtasks linked to a main task, ensuring a clutter-free visual interface and focused task management. The user can achieve this by clicking the arrow icon beside a
+task's checkbox.
+
+## Codebase Overview
+- backend
+  - app.py
+  - auth.py
+  - database.py
+  - models.py
+  - requirements.txt
+  - routes.py
+- frontend
+  - dist
+    - output.css
+  - public
+  - src
+    - components
+      - Header.js
+      - Login.js
+      - Signup.js
+      - ToDoItem.js
+      - ToDoList.js
+    - pages
+      - LoginPage.js
+      - SignupPage.js
+      - UserPage.js
+    - App.js
+    - index.css
+    - index.js
+    - UserContext.js
+    - package-lock.json
+    - package.json
+    - tailwind.config.js
+- README.md
+
+
+
+
+
+
+
+
 
