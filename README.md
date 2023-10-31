@@ -107,6 +107,7 @@ task's checkbox.
 
 ## Demo video
 Click on the following link to watch the video. 
+[Link](https://www.loom.com/share/ce6b969979f94f80854a933f510e98a2?sid=48456141-bc1a-473d-b9fa-a08f3eafbb8a)
 
 
 ## AI statement
