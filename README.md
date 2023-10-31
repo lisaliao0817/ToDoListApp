@@ -70,36 +70,36 @@ Allow users to view or hide subtasks linked to a main task, ensuring a clutter-f
 task's checkbox.
 
 ## Codebase Overview
-- backend
-  - app.py
-  - auth.py
-  - database.py
-  - models.py
-  - requirements.txt
-  - routes.py
-- frontend
-  - dist
-    - output.css
-  - public
-  - src
-    - components
-      - Header.js
-      - Login.js
-      - Signup.js
-      - ToDoItem.js
-      - ToDoList.js
-    - pages
-      - LoginPage.js
-      - SignupPage.js
-      - UserPage.js
-    - App.js
-    - index.css
-    - index.js
-    - UserContext.js
-    - package-lock.json
-    - package.json
-    - tailwind.config.js
-- README.md
+- **backend
+  - **app.py**
+  - **auth.py**
+  - **database.py**
+  - **models.py**
+  - **requirements.txt**
+  - **routes.py**
+- **frontend**
+  - **dist**
+    - **output.css**
+  - **public**
+  - **src**
+    - **components**
+      - **Header.js**
+      - **Login.js**
+      - **Signup.js**
+      - **ToDoItem.js**
+      - **ToDoList.js**
+    - **pages**
+      - **LoginPage.js**
+      - **SignupPage.js**
+      - **UserPage.js**
+    - **App.js**
+    - **index.css**
+    - **index.js**
+    - **UserContext.js**
+    - **package-lock.json**
+    - **package.json**
+    - **tailwind.config.js**
+- **README.md**
 
 
 
