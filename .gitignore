@@ -34,6 +34,7 @@ venv
 /frontend/.env.production.local
 /frontend/npm-debug.log
 /frontend/yarn-error.log
+/frontend/dist/output.css
 
 # Flask
 /backend/__pycache__/
@@ -43,6 +44,7 @@ venv
 /backend/db.sqlite3
 /backend/.env
 /backend/db.sqlite
+
 
 # Virtual environment
 venv/
