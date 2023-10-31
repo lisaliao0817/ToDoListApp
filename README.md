@@ -9,7 +9,8 @@ The user can also move items between lists, as well as expand and collapse a tas
 
 ## Installation
 
-To get the application to run, follow the steps below:
+To get the application to run, follow the steps below (please do `pip3 install werkzeug==2.3.0` after `pip3 install -r requirements.txt` for backend and `npx tailwindcss -i ./src/index.css -o ./dist/output.css --watch` for frontend)
+
 
 **Flask on macOS:**
 
@@ -17,6 +18,7 @@ To get the application to run, follow the steps below:
 python3 -m venv venv
 source venv/bin/activate
 pip3 install -r requirements.txt
+pip3 install werkzeug==2.3.0
 python3 app.py
 ```
 
@@ -26,6 +28,7 @@ python3 app.py
 python3 -m venv venv
 venv\Scripts\activate.bat
 pip3 install -r requirements.txt
+pip3 install werkzeug==2.3.0
 python3 app.py
 ```
 
@@ -33,6 +36,7 @@ python3 app.py
 
 ```bash
 npm install
+npx tailwindcss -i ./src/index.css -o ./dist/output.css --watch
 npm start
 ```
 
