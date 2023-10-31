@@ -79,8 +79,6 @@ task's checkbox.
   - **routes.py**: Defines the API endpoints and their corresponding handlers for the application.
 
 - **frontend**
-  - **dist**
-    - **output.css**: Compiled and optimized CSS from source styles from TailwindCSS.
   - **public**: Contains static files and assets that can be directly accessed by the browser.
   - **src**
     - **components**
