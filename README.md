@@ -110,10 +110,6 @@ Click on the following link to watch the video.
 [Link](https://www.loom.com/share/ce6b969979f94f80854a933f510e98a2?sid=48456141-bc1a-473d-b9fa-a08f3eafbb8a)
 
 
-## AI statement
-ChatGPT has helped me tremendously in this assignment. It helped me create functions, routes, and models, guided me through the project, answered my questions, cleared my confusion for a lot of things, and debugged for me. However, there are times when it is not very useful and I had to either debug on my own or ask for help from other people. 
-
-
 
 
 
